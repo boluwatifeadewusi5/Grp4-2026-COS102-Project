@@ -1,10 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Civic Connect is a Python Tkinter desktop app for community posts, NGO/Government partnerships, agreements, projects, reports, messaging, and cloud-ready shared data.">
-    <title>Civic Connect - Desktop Prototype</title>
+    <title>Civic Connect - Desktop App</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -21,16 +21,15 @@
     <main>
       <section class="hero">
         <div>
-          <p class="eyebrow">PYTHON TKINTER + SQLITE / POSTGRES</p>
+          <p class="eyebrow">PYTHON TKINTER + CLOUD-READY DATA</p>
           <h1>Civic Connect</h1>
           <p class="hero-copy">
-            A desktop civic collaboration prototype for Public users, NGOs, and Government agencies. It supports posts, messaging, partnerships, agreements, project tracking, reports, notifications, and optional hosted shared data.
+            A desktop civic collaboration prototype for casual community users, NGOs, and Government agencies. It supports posts, messaging, partnerships, agreements, project tracking, reports, notifications, and optional hosted shared data.
           </p>
           <div class="actions" id="download">
-            <a class="button primary" href="test.txt" download="test.txt">Download Civic Connect</a>
-            <a class="button secondary" href="https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest" rel="noreferrer">Latest Release</a>
+            <a class="button primary" href="https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest/download/CivicConnect.exe">Download Windows EXE</a>
+            <a class="button secondary" href="https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest">Latest Release</a>
           </div>
-          <p class="download-note">Prototype download: saves <code>test.txt</code> from this site. Replace the link with a GitHub Release EXE when the app build is ready.</p>
         </div>
 
         <div class="product-window" aria-label="Civic Connect app preview">
@@ -75,12 +74,12 @@
 
       <section class="band alt" id="features">
         <div class="section-head">
-          <h2>Built For The Desktop Demo</h2>
-          <p>The app keeps a simple Python codebase while demonstrating real workflows across three role types.</p>
+          <h2>Built For Desktop Collaboration</h2>
+          <p>The app keeps a simple Python codebase while showing real workflows across three role types.</p>
         </div>
         <div class="grid">
           <article class="card">
-            <h3>Public Users</h3>
+            <h3>Casual Users</h3>
             <p>Post community updates, like and comment, manage friends, send casual-only messages, and export summaries.</p>
           </article>
           <article class="card">
@@ -97,7 +96,7 @@
       <section class="band" id="cloud">
         <div class="section-head">
           <h2>Cloud-Ready Shared Data</h2>
-          <p>The executable can run offline with SQLite or connect to a hosted Postgres database with one environment variable.</p>
+          <p>The executable can run with local data or connect to a hosted Postgres database with one environment variable.</p>
         </div>
         <div class="steps">
           <div class="step">
@@ -118,7 +117,7 @@
             <div class="step-number">3</div>
             <div>
               <h3>Build and publish the EXE</h3>
-              <p>Use PyInstaller locally, attach the EXE to a GitHub Release, then point the download button at that release asset URL.</p>
+              <p>Use PyInstaller locally or the included GitHub Actions workflow, then attach the EXE to a GitHub Release.</p>
             </div>
           </div>
         </div>
@@ -126,28 +125,29 @@
 
       <section class="band alt">
         <div class="section-head">
-          <h2>Demo Login Details</h2>
-          <p>Fresh databases are seeded automatically the first time the app runs.</p>
+          <h2>Role-Based Workspaces</h2>
+          <p>Each role has a focused workspace so casual conversations, NGO operations, and Government approvals stay separate.</p>
         </div>
         <div class="grid">
           <article class="card">
-            <h3>Public User</h3>
-            <p>alex@demo.com<br>Password: password</p>
+            <h3>Community Space</h3>
+            <p>Casual users handle posts, comments, friendships, private messages, profile updates, and activity exports.</p>
           </article>
           <article class="card">
-            <h3>NGO</h3>
-            <p>ngo@demo.com<br>Password: password</p>
+            <h3>NGO Workspace</h3>
+            <p>NGOs discover partners, submit agreements, manage projects, upload documents, and publish reports.</p>
           </article>
           <article class="card">
-            <h3>Government</h3>
-            <p>gov@demo.com<br>Password: password</p>
+            <h3>Government Review</h3>
+            <p>Government users approve partners, review agreement changes, monitor projects, and track public initiatives.</p>
           </article>
         </div>
       </section>
     </main>
 
     <footer class="footer">
-      <p>Civic Connect is a desktop prototype. The website hosts the showcase and download; the app itself runs on Windows.</p>
+      <p>Civic Connect is a desktop app. The website hosts the showcase and download; the app itself runs on Windows.</p>
     </footer>
   </body>
 </html>
+

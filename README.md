@@ -1,35 +1,31 @@
-# Grp4-2026-COS102-Project — Civic Connect
+# Civic Connect - Upscaled Tkinter Desktop App
 
-COS102 group project: Civic Connect desktop prototype and public landing page.
+Civic Connect is a pure Python desktop app with a functional data layer. It keeps the original Tkinter architecture, while adding stronger validation, safer workflow rules, searchable views, CSV export, and project document management.
+
+## Run
+
+```bash
+python main.py
+```
+
+No third-party packages are required for local desktop use. The app uses Python standard library modules including Tkinter, hashlib, secrets, pathlib, csv, and dataclasses.
 
 ## Repository layout
 
 | Path | Purpose |
 |------|---------|
-| `docs/` | **Deploy this** — live site for Vercel / GitHub Pages |
-| `Civic connect webpage/` | Working copy — sync into `docs/` before you push |
-| `app/` | Local app / notebook work (not deployed to Vercel) |
+| `docs/` | **Deploy this** — GitHub Pages site (index, styles, `test.txt` download) |
+| `Civic connect webpage/` | Working copy of the same site (keep in sync with `docs/` when editing) |
+| `app/` | Application / notebook work |
 
-## Host the website on Vercel
+## Publish the website
 
-1. Push the latest code to GitHub.
-2. Import the repo on [Vercel](https://vercel.com/new).
-3. Set **Root Directory** to **`docs`**.
-4. Leave **Build Command** and **Install Command** empty.
-5. Deploy.
+1. Push to GitHub on branch `main`.
+2. **Settings → Pages** → Deploy from branch `main`, folder **`/docs`**.
+3. Site URL: https://boluwatifeadewusi5.github.io/Grp4-2026-COS102-Project/
 
-Details: [VERCEL.md](VERCEL.md) and [docs/README.md](docs/README.md).
-
-The Tkinter app is **not** hosted on Vercel — only this static landing page. Ship the `.exe` via GitHub Releases when ready.
-
-## Host on GitHub Pages
-
-1. Push to branch `main`.
-2. **Settings → Pages** → branch **`main`**, folder **`/docs`**.
-3. https://boluwatifeadewusi5.github.io/Grp4-2026-COS102-Project/
+See [docs/README.md](docs/README.md) for download and release details.
 
 ## Development
 
-Do not commit `venv/`. Root `.gitignore` excludes virtual environments.
-
-After editing the site in `Civic connect webpage/`, sync files into `docs/` (see `docs/README.md`) before pushing.
+Do not commit `venv/`. A root `.gitignore` excludes virtual environments and common Python artifacts.

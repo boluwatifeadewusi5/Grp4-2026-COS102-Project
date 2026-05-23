@@ -1,9 +1,11 @@
-venv/
-.venv/
 __pycache__/
 *.py[cod]
-.DS_Store
-Thumbs.db
+.venv/
+build/
+dist/
+*.spec
 *.log
-.env
-.env.*
+*.sqlite3
+requirements-dev.txt
+requirements.txt
+.env.example

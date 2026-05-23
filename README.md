@@ -5,54 +5,28 @@ Civic Connect is a pure Python desktop app with a functional data layer. It keep
 ## Run
 
 ```bash
-python main.py
+python desktop/main.py
 ```
 
 No third-party packages are required for local desktop use. The app uses Python standard library modules including Tkinter, hashlib, secrets, pathlib, csv, and dataclasses.
 
-## New In This Upscaled Version
+## Repository layout
 
-- Optional hosted Postgres database mode through `CIVIC_CONNECT_DATABASE_URL`.
-- GitHub Pages-ready showcase/download website in `docs/`.
-- Local Iconify/Lucide icon assets in `rescources/`, rendered as PNGs for Tkinter buttons.
-- Search posts by topic, body, or author.
-- Search suggested casual users.
-- Search discoverable NGO/Government partners.
-- Filter agreements by status and text.
-- Filter projects by status and text.
-- Search reports.
-- Export a user's dashboard/activity summary to CSV.
-- Upload document records to both agreements and projects.
-- Stronger backend checks for accepted partnerships before organization projects.
-- Safer agreement status transitions.
-- Friend and partner requests can only be handled while pending.
-- Signup validates email format and requires organization names for NGO/Government accounts.
-- Placeholder text is no longer saved as real post/agreement/profile content.
+| Path | Purpose |
+|------|---------|
+| `docs/` | **Deploy this** — GitHub Pages site (index, styles, `test.txt` download) |
+| `Civic connect webpage/` | Working copy of the same site (keep in sync with `docs/` when editing) |
+| `app/` | Application / notebook work |
 
-## Existing Core Features
+## Publish the website
 
-### Authentication
-- Sign up
-- Login
-- Persistent local accounts
-- Password hashing with PBKDF2
-- Profile editing
+1. Push to GitHub on branch `main`.
+2. **Settings → Pages** → Deploy from branch `main`, folder **`/docs`**.
+3. Site URL: https://boluwatifeadewusi5.github.io/Grp4-2026-COS102-Project/
 
-### Role Separation
-- Casual Users cannot interact with Government or NGO accounts.
-- Government and NGO accounts cannot interact with Casual Users.
-- Government and NGO users must become accepted partners before messaging, agreements, or shared projects.
+See [docs/README.md](docs/README.md) for download and release details.
 
-### Casual User Features
-- Create posts
-- Like/unlike posts
-- Comment on posts
-- Add friends
-- Accept/reject friend requests
-- Casual-only messaging
-- Notifications
-- Profile editing
-- CSV export
+## Development
 
 ### Government and NGO Features
 - Discover opposite-side organizations
@@ -88,7 +62,7 @@ Install cloud database support before running or packaging:
 
 ```bash
 python -m pip install -r requirements.txt
-python main.py
+python desktop/main.py
 ```
 
 The app will create its tables and starter records if the hosted `users` table is empty.
@@ -113,7 +87,7 @@ dist/CivicConnect.exe
 You can also run PyInstaller directly:
 
 ```bash
-pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" main.py
+pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" desktop/main.py
 ```
 
 ## Free Distribution And Hosting
@@ -128,11 +102,21 @@ Tkinter is a desktop GUI framework, so it cannot be hosted as a normal browser w
 
 See `PACKAGING_AND_HOSTING.md` for step-by-step instructions and links.
 
+## Host the website on Vercel
+
+1. Import the repo on Vercel.
+2. Set **Root Directory** to **`docs`**.
+3. Leave build/install commands empty.
+4. See `VERCEL.md` and `docs/README.md` for details.
+
+The Tkinter app is **not** deployed to Vercel — only the static landing page. Ship the `.exe` via GitHub Releases.
+
 ## Project Structure
 
 ```text
-main.py
+desktop/main.py
 README.md
+VERCEL.md
 PACKAGING_AND_HOSTING.md
 requirements.txt
 requirements-dev.txt

@@ -1,36 +1,33 @@
-# Vercel — deploy `Civic connect webpage` only
+# Vercel deployment — Civic Connect website only
 
-The live site is **`Civic connect webpage/`**, not `docs/`.
+Vercel hosts the **static webpage** in `docs/`. It does **not** run the Tkinter desktop app.
 
-## Required Vercel project settings
+## Required Vercel settings
 
 | Setting | Value |
 |--------|--------|
-| **Root Directory** | `Civic connect webpage` |
-| **Framework Preset** | Other |
-| **Build Command** | *(empty)* |
-| **Install Command** | *(empty)* |
-| **Output Directory** | *(empty — files are already at the root of this folder)* |
+| Root Directory | **`docs`** |
+| Framework Preset | Other |
+| Build Command | *(empty)* |
+| Install Command | *(empty)* |
+| Output Directory | *(empty when Root Directory is `docs`)* |
 
-## After changing settings
+## Why `app/` was renamed to `desktop/`
 
-1. Commit and push all files in `Civic connect webpage/` (`index.html`, `styles.css`, `test.txt`, `vercel.json`, `.nojekyll`).
-2. In Vercel → **Deployments** → **Redeploy** (use “Redeploy with existing Build Cache” **cleared** if you still see 404).
+Vercel’s Python builder looks specifically for `app/main.py` as a web API entrypoint. This project’s launcher is a **desktop GUI**, not Flask/FastAPI. Renaming `app/` → `desktop/` removes that false match.
 
-## URLs that should work
+## If the build still fails
 
-| URL | File |
-|-----|------|
-| `/` | `index.html` |
-| `/test.txt` | `test.txt` (download button) |
-| `/styles.css` | `styles.css` |
+1. Confirm **Root Directory** is `docs`, not `.`
+2. Redeploy after pushing the latest `vercel.json` and `.vercelignore`
+3. In the failed deployment, check that no step runs `pip install` or Python functions
 
-## If you still get 404
+## What gets deployed
 
-- **Root Directory** must be exactly `Civic connect webpage` (match the folder name on GitHub, including spaces).
-- Do **not** set Output Directory to `docs`.
-- Remove `app/main.py` from the repo if it was re-added — it makes Vercel treat the project as Python.
+Only static assets from `docs/`:
 
-## Desktop app
+- `index.html`
+- `styles.css`
+- `.nojekyll`
 
-The Tkinter app is **not** on Vercel. Ship `CivicConnect.exe` via GitHub Releases; the site only links to it later.
+The EXE is distributed via **GitHub Releases**, linked from the download button.

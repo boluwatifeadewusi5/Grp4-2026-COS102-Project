@@ -1,25 +1,27 @@
-# Civic Connect webpage — Vercel deploy folder
+# Civic Connect webpage — working copy
 
-**This folder is the live website.** Edit files here and push to GitHub.
+Edit files here during development, then copy changes into **`docs/`** before pushing.
 
-## Files Vercel serves
+- **GitHub Pages** publishes `/docs` on `main`.
+- **Vercel** should use Root Directory **`docs`** (see [VERCEL.md](../VERCEL.md)).
+
+## Sync to `docs/` before push
+
+```powershell
+Copy-Item "Civic connect webpage\index.html" "docs\index.html" -Force
+Copy-Item "Civic connect webpage\styles.css" "docs\styles.css" -Force
+Copy-Item "Civic connect webpage\test.txt" "docs\test.txt" -Force
+```
+
+## Files in this folder
 
 | File | Purpose |
 |------|---------|
 | `index.html` | Landing page |
 | `styles.css` | Styles |
-| `test.txt` | Prototype download (primary button) |
+| `test.txt` | Prototype download (local testing) |
 | `.nojekyll` | Static hosting helper |
-| `vercel.json` | Static site config (no build step) |
-
-## Vercel setup
-
-1. Import repo on [vercel.com](https://vercel.com/new).
-2. **Root Directory:** `Civic connect webpage`
-3. **Build / Install commands:** empty
-4. Deploy
-
-See [VERCEL.md](../VERCEL.md) in the repo root.
+| `vercel.json` | Static site config (used only if this folder is the Vercel root) |
 
 ## Local preview
 
@@ -28,10 +30,11 @@ Set-Location "Civic connect webpage"
 python -m http.server 8080
 ```
 
-Open http://127.0.0.1:8080 — click **Download Civic Connect** to save `test.txt`.
+Open http://127.0.0.1:8080
 
-## Later: EXE download
+## Deploy
 
-When `CivicConnect.exe` is on GitHub Releases, change the primary button in `index.html` to:
+- **Vercel:** Root Directory = **`docs`** — see [VERCEL.md](../VERCEL.md)
+- **GitHub Pages:** folder **`/docs`** on branch **`main`**
 
-`https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest/download/CivicConnect.exe`
+The download button in `docs/index.html` links to the latest GitHub Release EXE.

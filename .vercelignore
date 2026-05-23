@@ -1,19 +1,23 @@
-# Desktop app and Python (never deploy to Vercel)
-app/
-civic_connect/
+# Desktop app (not deployed to Vercel)
 desktop/
+civic_connect/
 rescources/
-docs/
-venv/
-.venv/
+build_windows.bat
+PACKAGING_AND_HOSTING.md
+Civic connect webpage/
 
+# Python / tooling
 **/*.py
 **/__pycache__/**
+venv/
+.venv/
 .github/
 *.bat
+*.spec
 dist/
 build/
-*.spec
 
+# Secrets and local data
 .env
 .env.*
+*.sqlite3

@@ -1,6 +1,8 @@
-# Beta 1.0 - Civic Connect
+# Beta 1.1 - Civic Connect
 
-Beta 1.0 is a Python Tkinter desktop app for civic collaboration between Casual Users, NGOs, and Government agencies. The app now uses Postgres only for storage, so the same code can run against a hosted database online or a local Postgres server offline.
+Beta 1.1 is a Python Tkinter desktop app for civic collaboration between Casual Users, NGOs, and Government agencies. The app uses Postgres only for storage, so the same code can run against a hosted database online or a local Postgres server offline.
+
+See [BETA_1.1.md](BETA_1.1.md) for the latest stability, performance, refresh, and config changes.
 
 ## Run The App
 
@@ -39,7 +41,7 @@ CIVIC_CONNECT_LOCAL_DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/civic
 
 ## Refresh
 
-Tkinter screens do not update automatically when another user changes the database, so Beta 1.0 refreshes logged-in screens on a timer.
+Tkinter screens do not update automatically when another user changes the database, so Beta 1.1 refreshes logged-in screens on a timer.
 
 The default refresh interval is 5 seconds. You can set any value from 1 to 5 seconds:
 
@@ -62,6 +64,7 @@ python main.py
 
 ## Features
 
+- Beta 1.1 fixes the Postgres Messages screen ordering error and improves database performance.
 - Postgres-only storage for local and hosted deployments.
 - Configurable 1-5 second auto-refresh for logged-in screens.
 - GitHub Pages-ready showcase/download website in `docs/`.

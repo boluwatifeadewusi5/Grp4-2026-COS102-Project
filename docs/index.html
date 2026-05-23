@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Beta 1.0 is a Python Tkinter desktop app for community posts, NGO/Government partnerships, agreements, projects, reports, messaging, and Postgres-backed shared data.">
-    <title>Beta 1.0 - Civic Connect</title>
+    <meta name="description" content="Beta 1.1 is a Python Tkinter desktop app for community posts, NGO/Government partnerships, agreements, projects, reports, messaging, and Postgres-backed shared data.">
+    <title>Beta 1.1 - Civic Connect</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <header class="nav">
-      <div class="brand">BETA 1.0</div>
+      <div class="brand">BETA 1.1</div>
       <nav class="nav-links" aria-label="Primary navigation">
         <a href="#features">Features</a>
         <a href="#cloud">Cloud Data</a>
@@ -22,7 +22,7 @@
       <section class="hero">
         <div>
           <p class="eyebrow">PYTHON TKINTER + POSTGRES</p>
-          <h1>Beta 1.0</h1>
+          <h1>Beta 1.1</h1>
           <p class="hero-copy">
             A desktop civic collaboration app for casual community users, NGOs, and Government agencies. It supports posts, messaging, partnerships, agreements, project tracking, reports, notifications, and local or hosted Postgres data.
           </p>
@@ -40,7 +40,7 @@
           </div>
           <div class="app-preview">
             <aside class="sidebar">
-              <div class="side-title">BETA 1.0</div>
+              <div class="side-title">BETA 1.1</div>
               <div class="side-item active">Dashboard</div>
               <div class="side-item">Partners</div>
               <div class="side-item">Messages</div>
@@ -89,6 +89,27 @@
           <article class="card">
             <h3>Government</h3>
             <p>Review partner requests, approve or reject agreements, monitor project progress, and keep a searchable activity history.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <h2>Beta 1.1 Updates</h2>
+          <p>Focused fixes for Postgres messaging, app responsiveness, refresh behavior, and safer configuration.</p>
+        </div>
+        <div class="grid">
+          <article class="card">
+            <h3>Messages Fixed</h3>
+            <p>Conversation ordering now uses a Postgres-safe query, fixing the missing <code>last_at</code> error.</p>
+          </article>
+          <article class="card">
+            <h3>Faster Refresh</h3>
+            <p>The app reuses its Postgres connection, adds useful indexes, and counts dashboard data with lighter queries.</p>
+          </article>
+          <article class="card">
+            <h3>Safer Config</h3>
+            <p>Private database config files are ignored, and <code>config.example.json</code> documents the safe setup pattern.</p>
           </article>
         </div>
       </section>

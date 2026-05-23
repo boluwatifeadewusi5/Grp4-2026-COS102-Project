@@ -1,9 +1,10 @@
-# Beta 1.0 Documentation
+# Beta 1.1 Documentation
 
 This folder contains all README/setup files and the GitHub Pages website.
 
 ## Files
 
+- `BETA_1.1.md`: release notes for the Postgres messaging, performance, refresh, and config fixes.
 - `PROJECT_README.md`: app features, run commands, packaging notes.
 - `POSTGRES_HOSTING.md`: local and hosted Postgres setup walkthrough.
 - `index.html`: public showcase/download page.

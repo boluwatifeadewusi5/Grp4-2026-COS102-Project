@@ -6,3 +6,5 @@ dist/
 *.spec
 *.log
 .env
+*.json
+config.json

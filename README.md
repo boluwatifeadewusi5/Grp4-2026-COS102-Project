@@ -1,6 +1,6 @@
-# Civic Connect - Upscaled Tkinter + SQLite Prototype
+# Civic Connect - Upscaled Tkinter Desktop App
 
-Civic Connect is a pure Python desktop prototype with a functional local backend. It keeps the original Tkinter and SQLite architecture, while adding stronger validation, safer workflow rules, searchable views, CSV export, and project document management.
+Civic Connect is a pure Python desktop app with a functional data layer. It keeps the original Tkinter architecture, while adding stronger validation, safer workflow rules, searchable views, CSV export, and project document management.
 
 ## Run
 
@@ -8,23 +8,7 @@ Civic Connect is a pure Python desktop prototype with a functional local backend
 python main.py
 ```
 
-No third-party packages are required at runtime. The app uses Python standard library modules including Tkinter, SQLite, hashlib, secrets, pathlib, csv, and dataclasses.
-
-## Demo Accounts
-
-All demo passwords are:
-
-```text
-password
-```
-
-Accounts:
-
-```text
-Casual User:      alex@demo.com
-NGO:              ngo@demo.com
-Government:       gov@demo.com
-```
+No third-party packages are required for local desktop use. The app uses Python standard library modules including Tkinter, hashlib, secrets, pathlib, csv, and dataclasses.
 
 ## New In This Upscaled Version
 
@@ -86,21 +70,15 @@ Government:       gov@demo.com
 - Live dashboard counts
 - CSV export
 
-## Database
+## Data Storage
 
-The app creates a SQLite database at:
-
-```text
-~/.civic_connect_tkinter/civic_connect.sqlite3
-```
-
-To reset demo data, close the app and delete that file, then run the app again.
+The app creates its local data file automatically in the user's app data folder.
 
 If you already ran the older prototype, reset the database before testing the project-document foreign key and new seeded workflow.
 
 ## Hosted Database Mode
 
-By default, Civic Connect uses local SQLite. To make all desktop installs share the same hosted database, create a hosted Postgres database on Supabase, Neon, or another Postgres provider, then set:
+By default, Civic Connect uses local data. To make all desktop installs share the same hosted database, create a hosted Postgres database on Supabase, Neon, or another Postgres provider, then set:
 
 ```bash
 CIVIC_CONNECT_DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
@@ -113,9 +91,9 @@ python -m pip install -r requirements.txt
 python main.py
 ```
 
-The app will create its tables and seed demo accounts if the hosted `users` table is empty.
+The app will create its tables and starter records if the hosted `users` table is empty.
 
-Important: direct database mode is good for class demos and controlled prototypes. For a public production app, put a small API between the `.exe` and database so the database password is not bundled into the executable.
+Important: direct database mode is good for class presentations and controlled prototypes. For a public production app, put a small API between the `.exe` and database so the database password is not bundled into the executable.
 
 ## Package As A Windows EXE
 
@@ -179,4 +157,4 @@ civic_connect/
 
 ## Notes
 
-This remains a local desktop prototype, not a web deployment. It is designed so your class can demonstrate both frontend flows and backend logic without Flask, Django, or external runtime dependencies.
+This remains a local desktop prototype, not a web deployment. It is designed so your class can present both frontend flows and backend logic without Flask, Django, or external runtime dependencies.

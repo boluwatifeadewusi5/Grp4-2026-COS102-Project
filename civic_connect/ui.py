@@ -14,6 +14,15 @@ def label(parent, text, size=10, color=None, bg=None, weight="normal", anchor="w
     return tk.Label(parent, text=text, font=(FONT, size, weight), fg=color or T.text, bg=bg or parent.cget("bg"), anchor=anchor, justify=justify, wraplength=wrap)
 
 
+def icon_label(parent, icon, tone="gold", size=32, bg=None):
+    image = get_icon(icon, tone=tone, size=size)
+    if image is None:
+        return tk.Label(parent, text="", bg=bg or parent.cget("bg"))
+    lbl = tk.Label(parent, image=image, bg=bg or parent.cget("bg"))
+    lbl._icon_image = image
+    return lbl
+
+
 def button(parent, text, command: Optional[Callable] = None, variant="primary", width=None, pady=7, icon=None):
     colors = {
         "primary": (T.gold, "#111111", T.gold),

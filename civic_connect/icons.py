@@ -28,7 +28,7 @@ def get_icon(name: str, tone: str = "gold", size: int = 16) -> Optional[tk.Photo
     path = resource_dir() / f"{name}-{tone}.png"
     if not path.exists():
         return None
-    image = tk.PhotoImage(file=str(path))
+    image = tk.PhotoImage(file=path.resolve().as_posix())
     factor = max(1, round(image.width() / size))
     if factor > 1:
         image = image.subsample(factor, factor)

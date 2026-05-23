@@ -7,7 +7,7 @@ This project is still a Tkinter desktop app. The practical free online setup is 
 The desktop app supports two database modes:
 
 ```text
-No environment variable        -> local SQLite
+No environment variable        -> local data file
 CIVIC_CONNECT_DATABASE_URL set -> hosted Postgres
 ```
 
@@ -30,9 +30,9 @@ $env:CIVIC_CONNECT_DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
 python main.py
 ```
 
-The app creates the tables automatically and seeds demo data only when the `users` table is empty.
+The app creates the tables automatically and adds starter records only when the `users` table is empty.
 
-Security note: direct database mode is fine for a controlled demo, but the connection string can be extracted from a packaged `.exe`. For a public production release, deploy a small API service between the desktop app and the database.
+Security note: direct database mode is fine for a controlled class presentation, but the connection string can be extracted from a packaged `.exe`. For a public production release, deploy a small API service between the desktop app and the database.
 
 Useful resources:
 
@@ -117,7 +117,7 @@ Before publishing:
 4. Open `Settings > Pages`.
 5. Set the publishing source to the `main` branch and `/docs` folder.
 
-The site showcases the app, explains cloud data mode, lists demo credentials, and links to the latest release executable.
+The site showcases the app, explains cloud data mode, and links to the latest release executable.
 
 Useful resources:
 

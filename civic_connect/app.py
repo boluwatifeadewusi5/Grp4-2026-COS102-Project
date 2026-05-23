@@ -4,12 +4,12 @@ from pathlib import Path
 from typing import Dict, Optional
 from .backend import CivicBackend, BackendError, AuthError, PermissionError
 from .theme import T, FONT
-from .ui import clear, label, button, entry, get_entry, text_box, card, tag, Scroll, Modal, toast, error
+from .ui import clear, label, icon_label, button, entry, get_entry, text_box, card, tag, Scroll, Modal, toast, error
 
 class CivicConnectApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Civic Connect - Full Working Tkinter + SQLite")
+        self.title("Civic Connect - Desktop Collaboration Platform")
         self.geometry("1320x850")
         self.minsize(1120, 720)
         self.configure(bg=T.bg)
@@ -115,42 +115,73 @@ class CivicConnectApp(tk.Tk):
         row = tk.Frame(left, bg=T.bg); row.pack(anchor="w")
         button(row, "GET STARTED", self.show_signup, "primary", width=18, icon="user-plus").pack(side="left", padx=(0,10))
         button(row, "LOG IN", self.show_login, "outline", width=14, icon="log-in").pack(side="left")
-        c = tk.Canvas(right, width=430, height=280, bg=T.bg, highlightthickness=0); c.pack(anchor="center")
-        c.create_oval(165, 60, 285, 180, outline=T.gold2, width=2); c.create_text(225,120,text="CC",fill=T.gold,font=(FONT,30,"bold"))
-        for x,y,t in [(225,30,"PARTNER"),(70,125,"USERS"),(380,125,"CLOUD"),(225,245,"CHAT")]:
-            c.create_line(225,120,x,y,fill=T.gold2,dash=(3,3)); c.create_oval(x-34,y-24,x+34,y+24,outline=T.border,width=2); c.create_text(x,y,text=t,font=(FONT,8,"bold"),fill=T.text)
-        c.create_text(225,270,text="Strict role separation enforced by backend",fill=T.muted,font=(FONT,9,"bold"))
+        visual = tk.Frame(right, bg=T.bg); visual.pack(anchor="center", fill="x", padx=(26, 0))
+        hub_o, hub = card(visual, padx=20, pady=18); hub_o.pack(fill="x", padx=36, pady=(0, 10))
+        icon_label(hub, "network", "gold", 42, T.panel).pack(anchor="center")
+        label(hub, "CIVIC CONNECT", 18, T.gold, T.panel, "bold", anchor="center").pack(fill="x", pady=(8, 2))
+        label(hub, "Role-aware collaboration, approvals, projects, reports, and messages.", 10, T.muted, T.panel, wrap=360, anchor="center", justify="center").pack(fill="x")
+        flow = tk.Frame(visual, bg=T.bg); flow.pack(fill="x")
+        for idx, (title, icon, color) in enumerate([
+            ("Community", "users", T.blue),
+            ("Partners", "handshake", T.red),
+            ("Approvals", "file-check-2", T.gold),
+            ("Shared Data", "cloud", T.green),
+        ]):
+            self.workflow_tile(flow, title, icon, color).grid(row=idx // 2, column=idx % 2, sticky="nsew", padx=6, pady=6)
+        for col in range(2):
+            flow.grid_columnconfigure(col, weight=1, uniform="workflow")
         stats = tk.Frame(main,bg=T.bg,pady=24); stats.pack(fill="x")
-        for title,val,sub,color in [("Casual Users","4 demo","Posts, friends, messages",T.blue),("NGOs","3 demo","Partnerships and reports",T.red),("Government","2 demo","Review and approvals",T.green),("Backend","SQLite","Fully persistent local DB",T.gold)]:
-            self.stat(stats,title,val,sub,color).pack(side="left",fill="x",expand=True,padx=6)
-        label(main,"DEMO LOGINS",16,T.gold,T.bg,"bold",anchor="center").pack(fill="x",pady=(8,10))
-        demos = "Casual: alex@demo.com / password     NGO: ngo@demo.com / password     Government: gov@demo.com / password"
-        label(main,demos,12,T.text,T.bg,anchor="center").pack(fill="x")
+        for title,val,sub,color,icon in [
+            ("Community", "People", "Posts, friends, messages", T.blue, "users"),
+            ("NGO Workspace", "Partners", "Agreements and reports", T.red, "handshake"),
+            ("Government", "Approvals", "Review and public initiatives", T.green, "landmark"),
+            ("Data Access", "Cloud-ready", "Flexible project data", T.gold, "cloud"),
+        ]:
+            self.stat(stats,title,val,sub,color,icon).pack(side="left",fill="x",expand=True,padx=6)
         cards = tk.Frame(main,bg=T.bg,pady=22); cards.pack(fill="x")
-        self.role_card(cards,"CASUAL USER","Posts, comments, likes, friendships, casual-only messaging",T.blue).pack(side="left",fill="x",expand=True,padx=7)
-        self.role_card(cards,"NGO","Discover government partners, agreements, messages, projects, reports",T.red).pack(side="left",fill="x",expand=True,padx=7)
-        self.role_card(cards,"GOVERNMENT","Approve partners, review agreements, manage public initiatives",T.green).pack(side="left",fill="x",expand=True,padx=7)
+        self.role_card(cards,"CASUAL USER","Posts, comments, likes, friendships, casual-only messaging",T.blue,"users").pack(side="left",fill="x",expand=True,padx=7)
+        self.role_card(cards,"NGO","Discover government partners, agreements, messages, projects, reports",T.red,"handshake").pack(side="left",fill="x",expand=True,padx=7)
+        self.role_card(cards,"GOVERNMENT","Approve partners, review agreements, manage public initiatives",T.green,"landmark").pack(side="left",fill="x",expand=True,padx=7)
 
-    def stat(self,parent,title,value,sub,color):
-        o,i=card(parent); label(i,value,22,color,T.panel,"bold").pack(anchor="w"); label(i,title,10,T.text,T.panel,"bold").pack(anchor="w"); label(i,sub,9,T.muted,T.panel).pack(anchor="w",pady=(4,0)); return o
+    def workflow_tile(self, parent, title, icon, color):
+        o, i = card(parent, padx=12, pady=10)
+        icon_label(i, icon, "gold", 24, T.panel).pack(side="left", padx=(0, 10))
+        label(i, title, 10, color, T.panel, "bold").pack(side="left")
+        return o
+
+    def stat(self,parent,title,value,sub,color,icon=None):
+        o,i=card(parent)
+        top=tk.Frame(i,bg=T.panel); top.pack(fill="x")
+        label(top,value,20,color,T.panel,"bold").pack(side="left",anchor="w")
+        if icon:
+            icon_label(top,icon,"gold",24,T.panel).pack(side="right")
+        label(i,title,10,T.text,T.panel,"bold").pack(anchor="w")
+        label(i,sub,9,T.muted,T.panel).pack(anchor="w",pady=(4,0))
+        return o
 
     def stat_grid(self, parent, items, columns=4):
         grid = tk.Frame(parent, bg=T.bg)
-        for idx, (title, value, sub, color) in enumerate(items):
-            tile = self.stat(grid, title, value, sub, color)
+        for idx, item in enumerate(items):
+            title, value, sub, color = item[:4]
+            icon = item[4] if len(item) > 4 else None
+            tile = self.stat(grid, title, value, sub, color, icon)
             tile.grid(row=idx // columns, column=idx % columns, sticky="ew", padx=5, pady=5)
         for col in range(columns):
             grid.grid_columnconfigure(col, weight=1, uniform="metric")
         return grid
 
-    def role_card(self,parent,title,body,color):
-        o,i=card(parent); label(i,title[:1],36,color,T.panel,"bold",anchor="center").pack(fill="x"); label(i,title,14,color,T.panel,"bold",anchor="center").pack(fill="x"); label(i,body,10,T.muted,T.panel,wrap=300,anchor="center",justify="center").pack(fill="x",pady=10); return o
+    def role_card(self,parent,title,body,color,icon):
+        o,i=card(parent)
+        icon_label(i,icon,"gold",42,T.panel).pack(anchor="center",pady=(4,8))
+        label(i,title,14,color,T.panel,"bold",anchor="center").pack(fill="x")
+        label(i,body,10,T.muted,T.panel,wrap=300,anchor="center",justify="center").pack(fill="x",pady=10)
+        return o
 
     def show_login(self):
         self.reset(); self.nav(public=True)
         main=tk.Frame(self.root,bg=T.bg,padx=40,pady=40); main.pack(fill="both",expand=True)
         o,i=card(main,padx=36,pady=32); o.place(relx=.5,rely=.43,anchor="center",width=500)
-        label(i,"CC",28,T.gold,T.panel,"bold",anchor="center").pack(fill="x")
+        icon_label(i,"network","gold",44,T.panel).pack(anchor="center")
         label(i,"WELCOME BACK",23,T.gold,T.panel,"bold",anchor="center").pack(fill="x",pady=(4,8))
         em=entry(i,"Email"); em.pack(fill="x",ipady=10,pady=7)
         pw=entry(i,"Password",show="*"); pw.pack(fill="x",ipady=10,pady=7)
@@ -159,7 +190,6 @@ class CivicConnectApp(tk.Tk):
                 self.start_session(self.backend.login(get_entry(em),get_entry(pw))); self.route_home()
             except Exception as exc: error(exc)
         button(i,"LOG IN",do_login,"primary",icon="log-in").pack(fill="x",pady=14)
-        label(i,"Demo: alex@demo.com, ngo@demo.com, gov@demo.com - password: password",9,T.muted,T.panel,wrap=430,anchor="center").pack(fill="x")
         bottom=tk.Frame(i,bg=T.panel); bottom.pack(pady=10)
         label(bottom,"No account? ",9,T.muted,T.panel).pack(side="left"); button(bottom,"Sign up",self.show_signup,"ghost",pady=2).pack(side="left")
 
@@ -210,7 +240,7 @@ class CivicConnectApp(tk.Tk):
         label(body,"Casual Social Feed",22,T.text,T.bg,"bold").pack(anchor="w")
         label(body,"Only Casual Users can post, like, comment, add friends, and message here.",10,T.muted,T.bg).pack(anchor="w",pady=(0,12))
         button(body,"EXPORT CSV",self.export_summary,"outline",width=14,icon="download").pack(anchor="e")
-        metric_items=[("Posts",str(counts["posts"]),"live from SQLite",T.blue),("Friends",str(counts["friends"]),"live from SQLite",T.green),("Messages",str(counts["messages"]),"live from SQLite",T.gold),("Unread",str(counts["notifications"]),"live from SQLite",T.warning)]
+        metric_items=[("Posts",str(counts["posts"]),"current count",T.blue,"rss"),("Friends",str(counts["friends"]),"current count",T.green,"users"),("Messages",str(counts["messages"]),"current count",T.gold,"message-circle"),("Unread",str(counts["notifications"]),"current count",T.warning,"bell")]
         self.stat_grid(body,metric_items,columns=4).pack(fill="x")
         search_row=tk.Frame(body,bg=T.bg); search_row.pack(fill="x",pady=(12,0))
         search=entry(search_row,"Search posts, topics, people"); self.set_entry_value(search,self.feed_search); search.pack(side="left",fill="x",expand=True,ipady=7)
@@ -308,7 +338,7 @@ class CivicConnectApp(tk.Tk):
         label(body,f"{self.current_user['role'].title()} Dashboard",22,T.text,T.bg,"bold").pack(anchor="w")
         label(body,"Government and NGO workspaces are separate from Casual Users. Partnerships must be accepted before messages and agreements.",10,T.muted,T.bg,wrap=900).pack(anchor="w",pady=(0,12))
         button(body,"EXPORT CSV",self.export_summary,"outline",width=14,icon="download").pack(anchor="e")
-        metric_items=[(k.replace("_"," ").title(),str(counts[k]),"live metric",T.gold if "pending" in k else T.green) for k in ["partners","pending_requests","agreements","pending_agreements","projects","reports","notifications"]]
+        metric_items=[(k.replace("_"," ").title(),str(counts[k]),"current count",T.gold if "pending" in k else T.green) for k in ["partners","pending_requests","agreements","pending_agreements","projects","reports","notifications"]]
         self.stat_grid(body,metric_items,columns=4).pack(fill="x")
         panels=tk.Frame(body,bg=T.bg,pady=14); panels.pack(fill="x")
         self.org_list_panel(panels,"Recent Agreements",self.backend.agreements_for(uid),"title","status").pack(side="left",fill="both",expand=True,padx=6)

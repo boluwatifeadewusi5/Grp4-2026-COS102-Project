@@ -20,14 +20,14 @@ Set the connection string before running:
 
 ```bash
 set CIVIC_CONNECT_DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
-python main.py
+python desktop/main.py
 ```
 
 For PowerShell:
 
 ```powershell
 $env:CIVIC_CONNECT_DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
-python main.py
+python desktop/main.py
 ```
 
 The app creates the tables automatically and adds starter records only when the `users` table is empty.
@@ -62,7 +62,7 @@ dist/CivicConnect.exe
 The build script uses PyInstaller with:
 
 ```bash
-pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" main.py
+pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" desktop/main.py
 ```
 
 Useful resource:
@@ -136,7 +136,8 @@ Good free options while keeping Tkinter:
 
 Not recommended if you must keep the same Tkinter UI:
 
-- PythonAnywhere, Render, Railway, Netlify, and Vercel as the primary app host. These host web apps, not desktop GUI windows.
+- PythonAnywhere, Render, Railway, and Netlify as the primary app host. These host web apps, not desktop GUI windows.
+- Vercel for the **Tkinter window itself** — use Vercel only for the static site in `docs/` (see `VERCEL.md`).
 - Replit-style browser IDEs for a public app. Tkinter GUI support is inconsistent and not a true deployment.
 
 If you later need a real browser app, keep the backend and database concepts, then rebuild the UI with Flask/FastAPI plus HTML, or with a frontend framework.

@@ -1,0 +1,6 @@
+{
+  "name": "civic-connect-website",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Static landing page for Civic Connect (Vercel / GitHub Pages)"
+}

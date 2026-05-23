@@ -5,7 +5,7 @@ Civic Connect is a pure Python desktop app with a functional data layer. It keep
 ## Run
 
 ```bash
-python main.py
+python desktop/main.py
 ```
 
 No third-party packages are required for local desktop use. The app uses Python standard library modules including Tkinter, hashlib, secrets, pathlib, csv, and dataclasses.
@@ -88,7 +88,7 @@ Install cloud database support before running or packaging:
 
 ```bash
 python -m pip install -r requirements.txt
-python main.py
+python desktop/main.py
 ```
 
 The app will create its tables and starter records if the hosted `users` table is empty.
@@ -113,7 +113,7 @@ dist/CivicConnect.exe
 You can also run PyInstaller directly:
 
 ```bash
-pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" main.py
+pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" desktop/main.py
 ```
 
 ## Free Distribution And Hosting
@@ -128,11 +128,21 @@ Tkinter is a desktop GUI framework, so it cannot be hosted as a normal browser w
 
 See `PACKAGING_AND_HOSTING.md` for step-by-step instructions and links.
 
+## Host the website on Vercel
+
+1. Import the repo on Vercel.
+2. Set **Root Directory** to **`docs`**.
+3. Leave build/install commands empty.
+4. See `VERCEL.md` and `docs/README.md` for details.
+
+The Tkinter app is **not** deployed to Vercel — only the static landing page. Ship the `.exe` via GitHub Releases.
+
 ## Project Structure
 
 ```text
-main.py
+desktop/main.py
 README.md
+VERCEL.md
 PACKAGING_AND_HOSTING.md
 requirements.txt
 requirements-dev.txt

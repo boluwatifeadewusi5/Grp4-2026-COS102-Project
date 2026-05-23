@@ -13,4 +13,5 @@ Copy-Item "Civic connect webpage\styles.css" "docs\styles.css" -Force
 Copy-Item "Civic connect webpage\test.txt" "docs\test.txt" -Force
 ```
 
-Deployment instructions: [../docs/README.md](../docs/README.md)
+- **Vercel:** Root Directory = **`docs`** — see [VERCEL.md](../VERCEL.md)
+- **GitHub Pages:** folder **`/docs`** on branch **`main`**

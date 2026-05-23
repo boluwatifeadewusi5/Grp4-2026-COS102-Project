@@ -10,49 +10,23 @@ python desktop/main.py
 
 No third-party packages are required for local desktop use. The app uses Python standard library modules including Tkinter, hashlib, secrets, pathlib, csv, and dataclasses.
 
-## New In This Upscaled Version
+## Repository layout
 
-- Optional hosted Postgres database mode through `CIVIC_CONNECT_DATABASE_URL`.
-- GitHub Pages-ready showcase/download website in `docs/`.
-- Local Iconify/Lucide icon assets in `rescources/`, rendered as PNGs for Tkinter buttons.
-- Search posts by topic, body, or author.
-- Search suggested casual users.
-- Search discoverable NGO/Government partners.
-- Filter agreements by status and text.
-- Filter projects by status and text.
-- Search reports.
-- Export a user's dashboard/activity summary to CSV.
-- Upload document records to both agreements and projects.
-- Stronger backend checks for accepted partnerships before organization projects.
-- Safer agreement status transitions.
-- Friend and partner requests can only be handled while pending.
-- Signup validates email format and requires organization names for NGO/Government accounts.
-- Placeholder text is no longer saved as real post/agreement/profile content.
+| Path | Purpose |
+|------|---------|
+| `docs/` | **Deploy this** — GitHub Pages site (index, styles, `test.txt` download) |
+| `Civic connect webpage/` | Working copy of the same site (keep in sync with `docs/` when editing) |
+| `app/` | Application / notebook work |
 
-## Existing Core Features
+## Publish the website
 
-### Authentication
-- Sign up
-- Login
-- Persistent local accounts
-- Password hashing with PBKDF2
-- Profile editing
+1. Push to GitHub on branch `main`.
+2. **Settings → Pages** → Deploy from branch `main`, folder **`/docs`**.
+3. Site URL: https://boluwatifeadewusi5.github.io/Grp4-2026-COS102-Project/
 
-### Role Separation
-- Casual Users cannot interact with Government or NGO accounts.
-- Government and NGO accounts cannot interact with Casual Users.
-- Government and NGO users must become accepted partners before messaging, agreements, or shared projects.
+See [docs/README.md](docs/README.md) for download and release details.
 
-### Casual User Features
-- Create posts
-- Like/unlike posts
-- Comment on posts
-- Add friends
-- Accept/reject friend requests
-- Casual-only messaging
-- Notifications
-- Profile editing
-- CSV export
+## Development
 
 ### Government and NGO Features
 - Discover opposite-side organizations

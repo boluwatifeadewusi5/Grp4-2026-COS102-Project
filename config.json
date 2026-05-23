@@ -1,0 +1,3 @@
+{
+  "CIVIC_CONNECT_DATABASE_URL": "postgresql://neondb_owner:npg_FLNiyo8HmS4T@ep-proud-smoke-aqwu8vdk.c-8.us-east-1.aws.neon.tech/civic_connect?sslmode=require"
+}

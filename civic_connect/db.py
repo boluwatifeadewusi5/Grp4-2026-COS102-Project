@@ -1,6 +1,9 @@
 import os
 from contextlib import contextmanager
 from typing import Iterable, Optional
+import json
+import os
+from pathlib import Path
 
 DATABASE_ENV = "CIVIC_CONNECT_DATABASE_URL"
 LOCAL_DATABASE_ENV = "CIVIC_CONNECT_LOCAL_DATABASE_URL"
@@ -156,12 +159,44 @@ INSERT_ID_TABLES = {
     "documents", "projects", "reports", "notifications",
 }
 
+def get_config_database_url() -> Optional[str]:
+    
+
+    env_url = os.environ.get(DATABASE_ENV)
+    if env_url:
+        return env_url
+
+    possible_paths = [
+        Path("config.json"),
+        Path(__file__).resolve().parent.parent / "config.json",
+    ]
+
+    for path in possible_paths:
+        if path.exists():
+            with open(path, "r", encoding="utf-8") as file:
+                config = json.load(file)
+
+            db_url = config.get(DATABASE_ENV) or config.get("CIVIC_CONNECT_DATABASE_URL")
+            if db_url:
+                return db_url
+
+    return None
 
 class Database:
     def __init__(self, url: Optional[str] = None):
-        configured_url = url or os.environ.get(DATABASE_ENV) or os.environ.get(LOCAL_DATABASE_ENV)
+        configured_url = (
+            url
+            or get_config_database_url()
+            or os.environ.get(LOCAL_DATABASE_ENV)
+        )
+
         self.url = configured_url or DEFAULT_LOCAL_POSTGRES_URL
-        self.mode = "hosted" if os.environ.get(DATABASE_ENV) or url else "local"
+
+        if self.url and "localhost" not in self.url and "127.0.0.1" not in self.url:
+            self.mode = "hosted"
+        else:
+            self.mode = "local"
+
         self.initialize()
 
     @contextmanager
@@ -182,15 +217,18 @@ class Database:
             from psycopg.rows import dict_row
         except ImportError as exc:
             raise RuntimeError(
-                "Civic Connect now uses Postgres only. Install dependencies with: python -m pip install -r requirements.txt"
+                "Civic Connect now uses Postgres only. "
+                "Install dependencies with: python -m pip install -r requirements.txt"
             ) from exc
+
         try:
             return psycopg.connect(self.url, row_factory=dict_row)
         except psycopg.OperationalError as exc:
             target = "hosted Postgres" if self.mode == "hosted" else "local Postgres"
             raise RuntimeError(
                 f"Could not connect to {target}. Set {DATABASE_ENV} for online Postgres, "
-                f"or start local Postgres and create a civic_connect database at {DEFAULT_LOCAL_POSTGRES_URL}."
+                f"or start local Postgres and create a civic_connect database at "
+                f"{DEFAULT_LOCAL_POSTGRES_URL}."
             ) from exc
 
     def _convert_sql(self, sql: str) -> str:
@@ -199,11 +237,15 @@ class Database:
     def _with_returning_id(self, sql: str) -> str:
         stripped = sql.strip()
         lower = stripped.lower()
+
         if not lower.startswith("insert into ") or " returning " in lower:
             return sql
+
         table = lower.removeprefix("insert into ").split("(", 1)[0].strip().strip('"')
+
         if table in INSERT_ID_TABLES:
             return f"{sql.rstrip()} RETURNING id"
+
         return sql
 
     def initialize(self):
@@ -215,10 +257,15 @@ class Database:
 
     def execute(self, sql: str, params: Iterable = ()):
         with self.connect() as conn:
-            cur = conn.execute(self._convert_sql(self._with_returning_id(sql)), tuple(params))
+            cur = conn.execute(
+                self._convert_sql(self._with_returning_id(sql)),
+                tuple(params)
+            )
+
             if cur.description:
                 row = cur.fetchone()
                 return row["id"] if row and "id" in row else None
+
             return None
 
     def query(self, sql: str, params: Iterable = ()):

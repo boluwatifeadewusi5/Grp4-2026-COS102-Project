@@ -1,0 +1,16 @@
+# Not part of the public website
+app/
+Civic connect webpage/
+venv/
+.venv/
+
+# Python / build tooling (if added back later)
+**/*.py
+**/__pycache__/**
+.github/
+*.bat
+dist/
+build/
+
+.env
+.env.*

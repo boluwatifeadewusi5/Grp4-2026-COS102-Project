@@ -1,19 +1,20 @@
-# Civic Connect Website
+# Beta 1.0 Documentation
 
-This folder is ready for GitHub Pages.
+This folder contains all README/setup files and the GitHub Pages website.
 
-Recommended setup:
+## Files
 
-1. Push the project to GitHub.
-2. Go to repository `Settings > Pages`.
+- `PROJECT_README.md`: app features, run commands, packaging notes.
+- `POSTGRES_HOSTING.md`: local and hosted Postgres setup walkthrough.
+- `index.html`: public showcase/download page.
+- `styles.css`: website styling.
+
+## GitHub Pages
+
+1. Push the repository to GitHub.
+2. Open `Settings > Pages`.
 3. Set source to `Deploy from a branch`.
-4. Choose branch `main` and folder `/docs`.
+4. Choose the branch and `/docs` folder.
 5. Save.
 
-Before publishing, edit the download link in `index.html`:
-
-```html
-https://github.com/YOUR_USERNAME/YOUR_REPOSITORY/releases/latest/download/CivicConnect.exe
-```
-
-Replace `YOUR_USERNAME/YOUR_REPOSITORY` with your real GitHub repository path.
+The website hosts the project showcase and download link. The app itself remains a Windows Tkinter desktop application.

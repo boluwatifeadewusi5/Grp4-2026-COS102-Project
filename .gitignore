@@ -5,4 +5,4 @@ build/
 dist/
 *.spec
 *.log
-*.sqlite3
+.env

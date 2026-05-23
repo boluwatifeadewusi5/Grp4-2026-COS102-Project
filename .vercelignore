@@ -1,0 +1,19 @@
+# Desktop app and Python (never deploy to Vercel)
+app/
+civic_connect/
+desktop/
+rescources/
+docs/
+venv/
+.venv/
+
+**/*.py
+**/__pycache__/**
+.github/
+*.bat
+dist/
+build/
+*.spec
+
+.env
+.env.*

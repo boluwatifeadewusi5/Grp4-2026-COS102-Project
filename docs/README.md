@@ -1,19 +1,15 @@
-# Civic Connect Website
+# docs/ — mirror only (not used for Vercel)
 
-This folder is ready for GitHub Pages.
+The **deployed website** is in **`Civic connect webpage/`**.
 
-Recommended setup:
+Vercel and this project use that folder as the public site. `docs/` is kept for optional GitHub Pages (`/docs` on `main`) if you enable it separately.
 
-1. Push the project to GitHub.
-2. Go to repository `Settings > Pages`.
-3. Set source to `Deploy from a branch`.
-4. Choose branch `main` and folder `/docs`.
-5. Save.
+To sync from the live folder:
 
-Before publishing, edit the download link in `index.html`:
-
-```html
-https://github.com/YOUR_USERNAME/YOUR_REPOSITORY/releases/latest/download/CivicConnect.exe
+```powershell
+Copy-Item "Civic connect webpage\index.html" "docs\index.html" -Force
+Copy-Item "Civic connect webpage\styles.css" "docs\styles.css" -Force
+Copy-Item "Civic connect webpage\test.txt" "docs\test.txt" -Force
 ```
 
-Replace `YOUR_USERNAME/YOUR_REPOSITORY` with your real GitHub repository path.
+Vercel instructions: [VERCEL.md](../VERCEL.md)

@@ -6,9 +6,6 @@ docs/
 build_windows.bat
 PACKAGING_AND_HOSTING.md
 
-# Duplicate local copy of the site (Vercel uses docs/ only)
-Civic connect webpage/
-
 # Python / tooling
 **/*.py
 **/__pycache__/**

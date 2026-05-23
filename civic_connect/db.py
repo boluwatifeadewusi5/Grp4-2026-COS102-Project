@@ -1,9 +1,8 @@
 import os
 from contextlib import contextmanager
-from typing import Iterable, Optional
 import json
-import os
 from pathlib import Path
+from typing import Iterable, Optional
 
 DATABASE_ENV = "CIVIC_CONNECT_DATABASE_URL"
 LOCAL_DATABASE_ENV = "CIVIC_CONNECT_LOCAL_DATABASE_URL"
@@ -148,8 +147,16 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at);
 CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_created ON messages(conversation_id, created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_friendships_requester_status ON friendships(requester_id, status);
+CREATE INDEX IF NOT EXISTS idx_friendships_receiver_status ON friendships(receiver_id, status);
+CREATE INDEX IF NOT EXISTS idx_partner_requests_requester_status ON partner_requests(requester_id, status);
+CREATE INDEX IF NOT EXISTS idx_partner_requests_receiver_status ON partner_requests(receiver_id, status);
+CREATE INDEX IF NOT EXISTS idx_conversations_user_a ON conversations(user_a);
+CREATE INDEX IF NOT EXISTS idx_conversations_user_b ON conversations(user_b);
 CREATE INDEX IF NOT EXISTS idx_agreements_users ON agreements(government_id, ngo_id);
 CREATE INDEX IF NOT EXISTS idx_projects_users ON projects(owner_id, partner_id);
+CREATE INDEX IF NOT EXISTS idx_reports_project_created ON reports(project_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
 """
 
@@ -160,8 +167,6 @@ INSERT_ID_TABLES = {
 }
 
 def get_config_database_url() -> Optional[str]:
-    
-
     env_url = os.environ.get(DATABASE_ENV)
     if env_url:
         return env_url
@@ -197,6 +202,7 @@ class Database:
         else:
             self.mode = "local"
 
+        self._conn = None
         self.initialize()
 
     @contextmanager
@@ -206,10 +212,14 @@ class Database:
             yield conn
             conn.commit()
         except Exception:
-            conn.rollback()
+            if not conn.closed:
+                conn.rollback()
             raise
-        finally:
-            conn.close()
+
+    def close(self):
+        if self._conn is not None and not self._conn.closed:
+            self._conn.close()
+        self._conn = None
 
     def _connect(self):
         try:
@@ -221,9 +231,14 @@ class Database:
                 "Install dependencies with: python -m pip install -r requirements.txt"
             ) from exc
 
+        if self._conn is not None and not self._conn.closed:
+            return self._conn
+
         try:
-            return psycopg.connect(self.url, row_factory=dict_row)
+            self._conn = psycopg.connect(self.url, row_factory=dict_row)
+            return self._conn
         except psycopg.OperationalError as exc:
+            self._conn = None
             target = "hosted Postgres" if self.mode == "hosted" else "local Postgres"
             raise RuntimeError(
                 f"Could not connect to {target}. Set {DATABASE_ENV} for online Postgres, "

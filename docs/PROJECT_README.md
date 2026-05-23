@@ -17,6 +17,8 @@ CIVIC_CONNECT_DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
 python main.py
 ```
 
+You can also copy `config.example.json` to `config.json` for local testing. Keep `config.json` private because it can contain database passwords.
+
 For offline use, install Postgres locally, create a database named `civic_connect`, then run:
 
 ```bash
@@ -39,7 +41,7 @@ CIVIC_CONNECT_LOCAL_DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/civic
 
 Tkinter screens do not update automatically when another user changes the database, so Beta 1.0 refreshes logged-in screens on a timer.
 
-The default refresh interval is 3 seconds. You can set any value from 1 to 5 seconds:
+The default refresh interval is 5 seconds. You can set any value from 1 to 5 seconds:
 
 ```bash
 CIVIC_CONNECT_REFRESH_SECONDS=5
@@ -47,6 +49,16 @@ python main.py
 ```
 
 The app skips auto-refresh while a text field, text box, or dropdown has focus so it does not erase what a user is typing.
+
+## Optional Starter Data
+
+Fresh databases do not create sample logins automatically. To load starter records during development, set both values before launching:
+
+```bash
+CIVIC_CONNECT_SEED_STARTER_DATA=1
+CIVIC_CONNECT_SEED_PASSWORD=choose-a-development-password
+python main.py
+```
 
 ## Features
 

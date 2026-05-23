@@ -6,10 +6,6 @@ dist/
 *.spec
 *.log
 .env
-*.json
 config.json
-config.json
+civic_connect/config.json
 *.env
-dist/
-build/
-*.spec

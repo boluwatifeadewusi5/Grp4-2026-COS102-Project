@@ -1,6 +1,7 @@
 import csv
 import hashlib
 import io
+import os
 import re
 import secrets
 from typing import Dict, List, Optional
@@ -22,7 +23,8 @@ class AuthError(BackendError):
 class CivicBackend:
     def __init__(self, db: Optional[Database] = None):
         self.db = db or Database()
-        self.seed()
+        if os.environ.get("CIVIC_CONNECT_SEED_STARTER_DATA") == "1":
+            self.seed()
 
     # ---------- security / auth ----------
     def hash_password(self, password: str, salt: Optional[str] = None) -> str:
@@ -72,6 +74,10 @@ class CivicBackend:
         if not user:
             raise BackendError("User not found.")
         return user
+
+    def _count(self, sql: str, params=()) -> int:
+        row = self.db.one(sql, params)
+        return int(row["c"] if row else 0)
 
     def update_profile(self, user_id: int, full_name: str, phone: str, location: str, bio: str):
         if not full_name.strip():
@@ -252,12 +258,18 @@ class CivicBackend:
         return self.db.query(
             """
             SELECT c.*, u.id AS other_id, u.full_name AS other_name, u.role AS other_role, u.organization_name,
-                   (SELECT body FROM messages m WHERE m.conversation_id=c.id ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_message,
-                   (SELECT created_at FROM messages m WHERE m.conversation_id=c.id ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_at
+                   lm.body AS last_message, lm.created_at AS last_at
             FROM conversations c
             JOIN users u ON u.id = CASE WHEN c.user_a=? THEN c.user_b ELSE c.user_a END
+            LEFT JOIN LATERAL (
+                SELECT m.body, m.created_at
+                FROM messages m
+                WHERE m.conversation_id=c.id
+                ORDER BY m.created_at DESC, m.id DESC
+                LIMIT 1
+            ) lm ON TRUE
             WHERE c.user_a=? OR c.user_b=?
-            ORDER BY COALESCE(last_at, c.created_at) DESC
+            ORDER BY COALESCE(lm.created_at, c.created_at) DESC
             """, (user_id, user_id, user_id))
 
     def messages(self, conversation_id: int, user_id: int) -> List[Dict]:
@@ -542,21 +554,18 @@ class CivicBackend:
         role = self.user(user_id)["role"]
         if role == "casual":
             return {
-                "posts": self.db.one("SELECT COUNT(*) c FROM posts WHERE author_id=?", (user_id,))["c"],
-                "friends": len(self.friends_and_requests(user_id)["friends"]),
+                "posts": self._count("SELECT COUNT(*) AS c FROM posts WHERE author_id=?", (user_id,)),
+                "friends": self._count("SELECT COUNT(*) AS c FROM friendships WHERE (requester_id=? OR receiver_id=?) AND status='accepted'", (user_id, user_id)),
                 "notifications": self.unread_count(user_id),
-                "messages": len(self.conversations_for(user_id)),
+                "messages": self._count("SELECT COUNT(*) AS c FROM conversations WHERE user_a=? OR user_b=?", (user_id, user_id)),
             }
-        pr = self.partners_and_requests(user_id)
-        ags = self.agreements_for(user_id)
-        projects = self.projects_for(user_id)
         return {
-            "partners": len(pr["partners"]),
-            "pending_requests": len(pr["incoming"]),
-            "agreements": len(ags),
-            "pending_agreements": len([a for a in ags if a["status"] in ("pending", "changes_requested")]),
-            "projects": len(projects),
-            "reports": len(self.reports_for(user_id)),
+            "partners": self._count("SELECT COUNT(*) AS c FROM partner_requests WHERE (requester_id=? OR receiver_id=?) AND status='accepted'", (user_id, user_id)),
+            "pending_requests": self._count("SELECT COUNT(*) AS c FROM partner_requests WHERE receiver_id=? AND status='pending'", (user_id,)),
+            "agreements": self._count("SELECT COUNT(*) AS c FROM agreements WHERE government_id=? OR ngo_id=?", (user_id, user_id)),
+            "pending_agreements": self._count("SELECT COUNT(*) AS c FROM agreements WHERE (government_id=? OR ngo_id=?) AND status IN ('pending', 'changes_requested')", (user_id, user_id)),
+            "projects": self._count("SELECT COUNT(*) AS c FROM projects WHERE owner_id=? OR partner_id=?", (user_id, user_id)),
+            "reports": self._count("SELECT COUNT(*) AS c FROM reports r JOIN projects p ON p.id=r.project_id WHERE p.owner_id=? OR p.partner_id=?", (user_id, user_id)),
             "notifications": self.unread_count(user_id),
         }
 
@@ -565,15 +574,19 @@ class CivicBackend:
         row = self.db.one("SELECT COUNT(*) AS c FROM users")
         if row and row["c"]:
             return
-        casual1 = self.create_user("Alex Johnson", "alex@demo.com", "password", "casual", location="Seattle, WA", bio="Community-minded citizen passionate about local issues.")
-        casual2 = self.create_user("Sarah Mitchell", "sarah@demo.com", "password", "casual", location="Denver, CO", bio="Volunteer and local parks advocate.")
-        casual3 = self.create_user("David Lee", "david@demo.com", "password", "casual", location="Austin, TX", bio="Education and technology enthusiast.")
-        casual4 = self.create_user("Emma Davis", "emma@demo.com", "password", "casual", location="Portland, OR", bio="Local art and culture supporter.")
-        gov1 = self.create_user("Department of Community Development", "gov@demo.com", "password", "government", organization_name="Department of Community Development", location="Washington, DC", bio="Public-sector agency for community programs.")
-        gov2 = self.create_user("Ministry of Education", "education@gov.demo", "password", "government", organization_name="Ministry of Education", location="Washington, DC", bio="National education policy and outreach.")
-        ngo1 = self.create_user("GreenFuture Initiative", "ngo@demo.com", "password", "ngo", organization_name="GreenFuture Initiative", location="Washington, DC", bio="Environment and sustainability NGO.")
-        ngo2 = self.create_user("Helping Hands Foundation", "helping@ngo.demo", "password", "ngo", organization_name="Helping Hands Foundation", location="Baltimore, MD", bio="Community support and education NGO.")
-        ngo3 = self.create_user("HealthAid Network", "health@ngo.demo", "password", "ngo", organization_name="HealthAid Network", location="Chicago, IL", bio="Community health outreach network.")
+        seed_password = os.environ.get("CIVIC_CONNECT_SEED_PASSWORD", "").strip()
+        if not seed_password:
+            raise BackendError("Set CIVIC_CONNECT_SEED_PASSWORD before enabling starter data.")
+
+        casual1 = self.create_user("Alex Johnson", "alex@starter.local", seed_password, "casual", location="Seattle, WA", bio="Community-minded citizen passionate about local issues.")
+        casual2 = self.create_user("Sarah Mitchell", "sarah@starter.local", seed_password, "casual", location="Denver, CO", bio="Volunteer and local parks advocate.")
+        casual3 = self.create_user("David Lee", "david@starter.local", seed_password, "casual", location="Austin, TX", bio="Education and technology enthusiast.")
+        casual4 = self.create_user("Emma Davis", "emma@starter.local", seed_password, "casual", location="Portland, OR", bio="Local art and culture supporter.")
+        gov1 = self.create_user("Department of Community Development", "community@gov.starter.local", seed_password, "government", organization_name="Department of Community Development", location="Washington, DC", bio="Public-sector agency for community programs.")
+        gov2 = self.create_user("Ministry of Education", "education@gov.starter.local", seed_password, "government", organization_name="Ministry of Education", location="Washington, DC", bio="National education policy and outreach.")
+        ngo1 = self.create_user("GreenFuture Initiative", "greenfuture@ngo.starter.local", seed_password, "ngo", organization_name="GreenFuture Initiative", location="Washington, DC", bio="Environment and sustainability NGO.")
+        ngo2 = self.create_user("Helping Hands Foundation", "helping@ngo.starter.local", seed_password, "ngo", organization_name="Helping Hands Foundation", location="Baltimore, MD", bio="Community support and education NGO.")
+        ngo3 = self.create_user("HealthAid Network", "health@ngo.starter.local", seed_password, "ngo", organization_name="HealthAid Network", location="Chicago, IL", bio="Community health outreach network.")
 
         post1 = self.create_post(casual2, "Just attended a local park cleanup organized by amazing volunteers! Small actions lead to big changes. #CommunityLove #CleanParks", "Community")
         self.create_post(casual3, "Great discussion on youth education and technology today. Empowering the next generation is key to a better future.", "Education")
@@ -596,5 +609,5 @@ class CivicBackend:
         p1 = self.create_project(ngo1, "Clean Rivers Initiative", gov1, "Environment")
         self.update_project_progress(p1, ngo1, 45, "active")
         self.create_report(ngo1, p1, "Q2 Impact Report", "River cleanup completed in three districts with 128 volunteers.")
-        self.send_message(ngo1, gov1, "Good morning! We’re excited to share the latest progress on our reforestation project.", "Reforestation_Q2_Report.pdf")
+        self.send_message(ngo1, gov1, "Good morning! We're excited to share the latest progress on our reforestation project.", "Reforestation_Q2_Report.pdf")
         self.send_message(gov1, ngo1, "Thank you for the update. Please also share the budget utilization.")

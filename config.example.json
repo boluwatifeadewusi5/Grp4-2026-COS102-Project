@@ -1,0 +1,3 @@
+{
+  "CIVIC_CONNECT_DATABASE_URL": "postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+}

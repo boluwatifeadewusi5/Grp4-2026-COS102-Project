@@ -14,6 +14,7 @@ class CivicConnectApp(tk.Tk):
         self.geometry("1320x850")
         self.minsize(1120, 720)
         self.configure(bg=T.bg)
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.backend = CivicBackend()
         self.current_user: Optional[Dict] = None
         self.selected_conversation_id: Optional[int] = None
@@ -31,6 +32,7 @@ class CivicConnectApp(tk.Tk):
         self.refresh_job = None
         self.refresh_seconds = self.refresh_interval()
         self.refreshing = False
+        self.last_refresh_error = ""
         self.root = tk.Frame(self, bg=T.bg)
         self.root.pack(fill="both", expand=True)
         self.show_landing()
@@ -39,6 +41,18 @@ class CivicConnectApp(tk.Tk):
     # ---------- core layout ----------
     def reset(self):
         clear(self.root)
+
+    def on_close(self):
+        if self.refresh_job:
+            try:
+                self.after_cancel(self.refresh_job)
+            except tk.TclError:
+                pass
+        try:
+            self.backend.db.close()
+        except Exception:
+            pass
+        self.destroy()
 
     def start_session(self, user: Dict):
         self.current_user = user
@@ -65,9 +79,9 @@ class CivicConnectApp(tk.Tk):
 
     def refresh_interval(self) -> int:
         try:
-            seconds = int(os.environ.get("CIVIC_CONNECT_REFRESH_SECONDS", "3"))
+            seconds = int(os.environ.get("CIVIC_CONNECT_REFRESH_SECONDS", "5"))
         except ValueError:
-            seconds = 3
+            seconds = 5
         return max(1, min(5, seconds))
 
     def set_active_view(self, view, *args):
@@ -85,7 +99,8 @@ class CivicConnectApp(tk.Tk):
     def should_skip_refresh(self) -> bool:
         if not self.current_user or not self.active_view:
             return True
-        if self.focus_get() and self.focus_get().winfo_class() in {"Entry", "Text", "TCombobox"}:
+        focused = self.focus_get()
+        if focused and focused.winfo_class() in {"Entry", "Text", "TCombobox"}:
             return True
         return any(isinstance(child, tk.Toplevel) for child in self.winfo_children())
 
@@ -95,8 +110,8 @@ class CivicConnectApp(tk.Tk):
             if not self.refreshing and not self.should_skip_refresh():
                 self.refreshing = True
                 self.active_view(*self.active_view_args)
-        except Exception:
-            pass
+        except Exception as exc:
+            self.last_refresh_error = str(exc)
         finally:
             self.refreshing = False
             self.schedule_refresh()

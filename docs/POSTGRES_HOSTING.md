@@ -80,13 +80,22 @@ python main.py
 
 When `CIVIC_CONNECT_DATABASE_URL` is set, it wins over the local URL.
 
+For local testing, you may copy `config.example.json` to `config.json` and place the same connection string there. Do not commit `config.json`.
+
 ## 4. First Run
 
 On first run, the app:
 
 1. Connects to Postgres.
 2. Creates the required tables if they do not exist.
-3. Adds starter records only if the `users` table is empty.
+
+Fresh databases start empty. Create accounts through the sign-up screen. For development-only starter records, set both environment variables before first run:
+
+```powershell
+$env:CIVIC_CONNECT_SEED_STARTER_DATA="1"
+$env:CIVIC_CONNECT_SEED_PASSWORD="choose-a-development-password"
+python main.py
+```
 
 If the app cannot connect, check:
 
@@ -98,10 +107,10 @@ If the app cannot connect, check:
 
 ## 5. Refresh Interval
 
-Set the refresh interval from 1 to 5 seconds:
+Set the refresh interval from 1 to 5 seconds. The default is 5 seconds:
 
 ```powershell
-$env:CIVIC_CONNECT_REFRESH_SECONDS="3"
+$env:CIVIC_CONNECT_REFRESH_SECONDS="5"
 python main.py
 ```
 

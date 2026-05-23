@@ -6,3 +6,6 @@ dist/
 *.spec
 *.log
 *.sqlite3
+requirements-dev.txt
+requirements.txt
+.env.example

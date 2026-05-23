@@ -1,6 +1,6 @@
-# Postgres Hosting Guide For Beta 1.2
+# Postgres Hosting Guide For Beta 1.3
 
-Beta 1.2 uses Postgres only. The Tkinter app still runs on Windows, while the database can be either:
+Beta 1.3 uses Postgres only. The Tkinter app still runs on Windows, while the database can be either:
 
 - Online: a hosted Postgres database such as Supabase or Neon.
 - Offline: a Postgres server installed on the same computer.

@@ -2,6 +2,7 @@ import os
 from contextlib import contextmanager
 import json
 from pathlib import Path
+from threading import RLock
 from typing import Iterable, Optional
 
 DATABASE_ENV = "CIVIC_CONNECT_DATABASE_URL"
@@ -209,23 +210,26 @@ class Database:
             self.mode = "local"
 
         self._conn = None
+        self._lock = RLock()
         self.initialize()
 
     @contextmanager
     def connect(self):
-        conn = self._connect()
-        try:
-            yield conn
-            conn.commit()
-        except Exception:
-            if not conn.closed:
-                conn.rollback()
-            raise
+        with self._lock:
+            conn = self._connect()
+            try:
+                yield conn
+                conn.commit()
+            except Exception:
+                if not conn.closed:
+                    conn.rollback()
+                raise
 
     def close(self):
-        if self._conn is not None and not self._conn.closed:
-            self._conn.close()
-        self._conn = None
+        with self._lock:
+            if self._conn is not None and not self._conn.closed:
+                self._conn.close()
+            self._conn = None
 
     def _connect(self):
         try:

@@ -82,6 +82,15 @@ class CivicBackend:
     def _like(self, value: str) -> str:
         return f"%{value.strip()}%"
 
+    def _limit_value(self, limit: Optional[int], default: Optional[int] = None, maximum: int = 100) -> Optional[int]:
+        if limit is None:
+            return default
+        try:
+            value = int(limit)
+        except (TypeError, ValueError):
+            value = default or maximum
+        return max(1, min(value, maximum))
+
     def update_profile(self, user_id: int, full_name: str, phone: str, location: str, bio: str):
         if not full_name.strip():
             raise BackendError("Full name is required.")
@@ -91,12 +100,24 @@ class CivicBackend:
     def users_by_role(self, role: str) -> List[Dict]:
         return self.db.query("SELECT id,full_name,email,role,organization_name,location,bio,verified,created_at FROM users WHERE role=? ORDER BY full_name", (role,))
 
+    def public_stats(self) -> Dict[str, int]:
+        row = self.db.one(
+            """
+            SELECT
+                (SELECT COUNT(*) FROM users WHERE role='casual') AS casual_users,
+                (SELECT COUNT(*) FROM users WHERE role='ngo') AS ngo_users,
+                (SELECT COUNT(*) FROM users WHERE role='government') AS government_users,
+                (SELECT COUNT(*) FROM projects) AS projects
+            """
+        ) or {}
+        return {key: int(row.get(key) or 0) for key in ("casual_users", "ngo_users", "government_users", "projects")}
+
     # ---------- notifications ----------
     def notify(self, user_id: int, title: str, body: str):
         self.db.execute("INSERT INTO notifications(user_id,title,body) VALUES(?,?,?)", (user_id, title, body))
 
-    def notifications(self, user_id: int) -> List[Dict]:
-        return self.db.query("SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 30", (user_id,))
+    def notifications(self, user_id: int, limit: int = 30) -> List[Dict]:
+        return self.db.query("SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT ?", (user_id, max(1, min(int(limit), 100))))
 
     def unread_count(self, user_id: int) -> int:
         row = self.db.one("SELECT COUNT(*) AS c FROM notifications WHERE user_id=? AND is_read=0", (user_id,))
@@ -119,22 +140,42 @@ class CivicBackend:
 
     def feed(self, viewer_id: int, search: str = "") -> List[Dict]:
         self.require_casual(viewer_id)
-        params = [viewer_id]
+        params = []
         where = "WHERE u.role='casual'"
         if search.strip():
             like = self._like(search)
             where += " AND (p.body ILIKE ? OR p.topic ILIKE ? OR u.full_name ILIKE ?)"
             params.extend([like, like, like])
+        params.append(viewer_id)
         posts = self.db.query(
             f"""
-            SELECT p.*, u.full_name, u.email,
-                (SELECT COUNT(*) FROM likes l WHERE l.post_id=p.id) AS like_count,
-                (SELECT COUNT(*) FROM comments c WHERE c.post_id=p.id) AS comment_count,
-                EXISTS(SELECT 1 FROM likes l WHERE l.post_id=p.id AND l.user_id=?) AS liked_by_me
-            FROM posts p JOIN users u ON u.id=p.author_id
-            {where}
-            ORDER BY p.created_at DESC, p.id DESC
-            LIMIT 40
+            WITH visible_posts AS (
+                SELECT p.*, u.full_name, u.email
+                FROM posts p
+                JOIN users u ON u.id=p.author_id
+                {where}
+                ORDER BY p.created_at DESC, p.id DESC
+                LIMIT 40
+            )
+            SELECT vp.*,
+                   COALESCE(lc.like_count, 0) AS like_count,
+                   COALESCE(cc.comment_count, 0) AS comment_count,
+                   (ml.user_id IS NOT NULL) AS liked_by_me
+            FROM visible_posts vp
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) AS like_count
+                FROM likes
+                WHERE post_id IN (SELECT id FROM visible_posts)
+                GROUP BY post_id
+            ) lc ON lc.post_id=vp.id
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) AS comment_count
+                FROM comments
+                WHERE post_id IN (SELECT id FROM visible_posts)
+                GROUP BY post_id
+            ) cc ON cc.post_id=vp.id
+            LEFT JOIN likes ml ON ml.post_id=vp.id AND ml.user_id=?
+            ORDER BY vp.created_at DESC, vp.id DESC
             """,
             params,
         )
@@ -217,22 +258,32 @@ class CivicBackend:
         self.db.execute("UPDATE friendships SET status=? WHERE id=?", (status, friendship_id))
         self.notify(fr["requester_id"], "Friend request updated", f"Your friend request was {status}.")
 
-    def friends_and_requests(self, user_id: int) -> Dict[str, List[Dict]]:
+    def friends_and_requests(self, user_id: int, limit: Optional[int] = None) -> Dict[str, List[Dict]]:
         self.require_casual(user_id)
+        limit_value = self._limit_value(limit)
+        limit_sql = " LIMIT ?" if limit_value else ""
+        friends_params = [user_id, user_id, user_id]
+        incoming_params = [user_id]
+        outgoing_params = [user_id]
+        if limit_value:
+            friends_params.append(limit_value)
+            incoming_params.append(limit_value)
+            outgoing_params.append(limit_value)
         friends = self.db.query(
-            """
+            f"""
             SELECT f.*, u.id AS other_id, u.full_name, u.email, u.location, u.bio
             FROM friendships f
             JOIN users u ON u.id = CASE WHEN f.requester_id=? THEN f.receiver_id ELSE f.requester_id END
             WHERE (f.requester_id=? OR f.receiver_id=?) AND f.status='accepted'
             ORDER BY u.full_name
-            """, (user_id, user_id, user_id))
+            {limit_sql}
+            """, friends_params)
         incoming = self.db.query(
-            "SELECT f.*, u.full_name, u.email FROM friendships f JOIN users u ON u.id=f.requester_id WHERE f.receiver_id=? AND f.status='pending' ORDER BY f.created_at DESC",
-            (user_id,))
+            f"SELECT f.*, u.full_name, u.email FROM friendships f JOIN users u ON u.id=f.requester_id WHERE f.receiver_id=? AND f.status='pending' ORDER BY f.created_at DESC{limit_sql}",
+            incoming_params)
         outgoing = self.db.query(
-            "SELECT f.*, u.full_name, u.email FROM friendships f JOIN users u ON u.id=f.receiver_id WHERE f.requester_id=? AND f.status='pending' ORDER BY f.created_at DESC",
-            (user_id,))
+            f"SELECT f.*, u.full_name, u.email FROM friendships f JOIN users u ON u.id=f.receiver_id WHERE f.requester_id=? AND f.status='pending' ORDER BY f.created_at DESC{limit_sql}",
+            outgoing_params)
         return {"friends": friends, "incoming": incoming, "outgoing": outgoing}
 
     def suggested_casual_users(self, user_id: int, search: str = "") -> List[Dict]:
@@ -288,9 +339,14 @@ class CivicBackend:
         self.notify(receiver_id, "New message", f"{self.user(sender_id)['full_name']} sent you a message.")
         return mid
 
-    def conversations_for(self, user_id: int) -> List[Dict]:
+    def conversations_for(self, user_id: int, limit: Optional[int] = None) -> List[Dict]:
+        limit_value = self._limit_value(limit)
+        limit_sql = "LIMIT ?" if limit_value else ""
+        params = [user_id, user_id, user_id]
+        if limit_value:
+            params.append(limit_value)
         return self.db.query(
-            """
+            f"""
             SELECT c.*, u.id AS other_id, u.full_name AS other_name, u.role AS other_role, u.organization_name,
                    lm.body AS last_message, lm.created_at AS last_at
             FROM conversations c
@@ -304,7 +360,8 @@ class CivicBackend:
             ) lm ON TRUE
             WHERE c.user_a=? OR c.user_b=?
             ORDER BY COALESCE(lm.created_at, c.created_at) DESC
-            """, (user_id, user_id, user_id))
+            {limit_sql}
+            """, params)
 
     def messages(self, conversation_id: int, user_id: int) -> List[Dict]:
         conv = self.db.one("SELECT * FROM conversations WHERE id=? AND (user_a=? OR user_b=?)", (conversation_id, user_id, user_id))
@@ -369,7 +426,7 @@ class CivicBackend:
         if accept:
             self.get_or_create_conversation(pr["requester_id"], pr["receiver_id"])
 
-    def partners_and_requests(self, user_id: int, search: str = "") -> Dict[str, List[Dict]]:
+    def partners_and_requests(self, user_id: int, search: str = "", limit: Optional[int] = None) -> Dict[str, List[Dict]]:
         self.require_org(user_id)
         search = search.strip()
         like = self._like(search) if search else ""
@@ -377,6 +434,15 @@ class CivicBackend:
         if search:
             search_clause = " AND (u.full_name ILIKE ? OR u.organization_name ILIKE ? OR u.location ILIKE ? OR u.bio ILIKE ? OR u.email ILIKE ?)"
         search_params = [like, like, like, like, like] if search else []
+        limit_value = self._limit_value(limit)
+        limit_sql = " LIMIT ?" if limit_value else ""
+        partners_params = [user_id, user_id, user_id, *search_params]
+        incoming_params = [user_id, *search_params]
+        outgoing_params = [user_id, *search_params]
+        if limit_value:
+            partners_params.append(limit_value)
+            incoming_params.append(limit_value)
+            outgoing_params.append(limit_value)
         partners = self.db.query(
             f"""
             SELECT p.*, u.id AS other_id, u.full_name, u.role, u.organization_name, u.location, u.bio
@@ -385,7 +451,8 @@ class CivicBackend:
             WHERE (p.requester_id=? OR p.receiver_id=?) AND p.status='accepted'
             {search_clause}
             ORDER BY u.full_name
-            """, (user_id, user_id, user_id, *search_params))
+            {limit_sql}
+            """, partners_params)
         incoming = self.db.query(
             f"""
             SELECT p.*, u.full_name, u.role, u.organization_name
@@ -394,7 +461,8 @@ class CivicBackend:
             WHERE p.receiver_id=? AND p.status='pending'
             {search_clause}
             ORDER BY p.created_at DESC
-            """, (user_id, *search_params))
+            {limit_sql}
+            """, incoming_params)
         outgoing = self.db.query(
             f"""
             SELECT p.*, u.full_name, u.role, u.organization_name
@@ -403,10 +471,11 @@ class CivicBackend:
             WHERE p.requester_id=? AND p.status='pending'
             {search_clause}
             ORDER BY p.created_at DESC
-            """, (user_id, *search_params))
+            {limit_sql}
+            """, outgoing_params)
         return {"partners": partners, "incoming": incoming, "outgoing": outgoing}
 
-    def discover_orgs(self, user_id: int, search: str = "") -> List[Dict]:
+    def discover_orgs(self, user_id: int, search: str = "", limit: Optional[int] = 30) -> List[Dict]:
         me = self.user(user_id)
         if me["role"] == "government":
             role = "ngo"
@@ -420,6 +489,8 @@ class CivicBackend:
             like = self._like(search)
             search_filter = " AND (u.full_name ILIKE ? OR u.organization_name ILIKE ? OR u.location ILIKE ? OR u.bio ILIKE ? OR u.email ILIKE ?)"
             params.extend([like, like, like, like, like])
+        limit_value = self._limit_value(limit, default=30)
+        params.append(limit_value)
         return self.db.query(
             f"""
             SELECT u.id,u.full_name,u.email,u.role,u.organization_name,u.location,u.bio,u.verified
@@ -434,7 +505,7 @@ class CivicBackend:
                   WHERE p.requester_id=? AND p.receiver_id=u.id AND p.status IN ('pending','accepted')
               )
               {search_filter}
-            ORDER BY u.full_name LIMIT 30
+            ORDER BY u.full_name LIMIT ?
             """, params)
 
     # ---------- agreements ----------
@@ -450,7 +521,7 @@ class CivicBackend:
         self.notify(partner_id, "Agreement submitted", f"{uc['full_name']} submitted agreement: {title}.")
         return aid
 
-    def agreements_for(self, user_id: int, search: str = "", status: str = "") -> List[Dict]:
+    def agreements_for(self, user_id: int, search: str = "", status: str = "", limit: Optional[int] = None) -> List[Dict]:
         self.require_org(user_id)
         params = [user_id, user_id]
         filters = ["(a.government_id=? OR a.ngo_id=?)"]
@@ -462,6 +533,10 @@ class CivicBackend:
             filters.append("(a.title ILIKE ? OR a.summary ILIKE ? OR g.full_name ILIKE ? OR n.full_name ILIKE ? OR g.organization_name ILIKE ? OR n.organization_name ILIKE ?)")
             params.extend([like, like, like, like, like, like])
         where = " AND ".join(filters)
+        limit_sql = ""
+        if limit:
+            limit_sql = "LIMIT ?"
+            params.append(max(1, min(int(limit), 100)))
         return self.db.query(
             f"""
             SELECT a.*, g.full_name AS government_name, n.full_name AS ngo_name,
@@ -471,6 +546,7 @@ class CivicBackend:
             JOIN users n ON n.id=a.ngo_id
             WHERE {where}
             ORDER BY a.updated_at DESC, a.id DESC
+            {limit_sql}
             """, params)
 
     def agreement(self, agreement_id: int, user_id: int) -> Dict:
@@ -555,7 +631,7 @@ class CivicBackend:
             self.notify(partner_id, "New project", f"{self.user(owner_id)['full_name']} added you to project: {title}.")
         return pid
 
-    def projects_for(self, user_id: int, search: str = "", status: str = "") -> List[Dict]:
+    def projects_for(self, user_id: int, search: str = "", status: str = "", limit: Optional[int] = None) -> List[Dict]:
         self.require_org(user_id)
         params = [user_id, user_id]
         filters = ["(p.owner_id=? OR p.partner_id=?)"]
@@ -567,7 +643,11 @@ class CivicBackend:
             filters.append("(p.title ILIKE ? OR p.focus_area ILIKE ? OR p.status ILIKE ? OR u.full_name ILIKE ?)")
             params.extend([like, like, like, like])
         where = " AND ".join(filters)
-        return self.db.query(f"SELECT p.*, u.full_name AS partner_name FROM projects p LEFT JOIN users u ON u.id=p.partner_id WHERE {where} ORDER BY p.created_at DESC", params)
+        limit_sql = ""
+        if limit:
+            limit_sql = " LIMIT ?"
+            params.append(max(1, min(int(limit), 100)))
+        return self.db.query(f"SELECT p.*, u.full_name AS partner_name FROM projects p LEFT JOIN users u ON u.id=p.partner_id WHERE {where} ORDER BY p.created_at DESC{limit_sql}", params)
 
     def update_project_progress(self, project_id: int, user_id: int, progress: int, status: str):
         row = self.project(project_id, user_id)
@@ -589,7 +669,7 @@ class CivicBackend:
         if other:
             self.notify(other, "New report", f"A report was submitted for {row['title']}.")
 
-    def reports_for(self, user_id: int, search: str = "") -> List[Dict]:
+    def reports_for(self, user_id: int, search: str = "", limit: Optional[int] = None) -> List[Dict]:
         self.require_org(user_id)
         params = [user_id, user_id]
         search_filter = ""
@@ -597,11 +677,41 @@ class CivicBackend:
             like = self._like(search)
             search_filter = " AND (r.title ILIKE ? OR r.body ILIKE ? OR p.title ILIKE ? OR u.full_name ILIKE ?)"
             params.extend([like, like, like, like])
-        return self.db.query(f"SELECT r.*, p.title AS project_title, u.full_name AS author FROM reports r JOIN projects p ON p.id=r.project_id JOIN users u ON u.id=r.author_id WHERE (p.owner_id=? OR p.partner_id=?) {search_filter} ORDER BY r.created_at DESC", params)
+        limit_value = self._limit_value(limit)
+        limit_sql = " LIMIT ?" if limit_value else ""
+        if limit_value:
+            params.append(limit_value)
+        return self.db.query(f"SELECT r.*, p.title AS project_title, u.full_name AS author FROM reports r JOIN projects p ON p.id=r.project_id JOIN users u ON u.id=r.author_id WHERE (p.owner_id=? OR p.partner_id=?) {search_filter} ORDER BY r.created_at DESC{limit_sql}", params)
 
     def documents_for_project(self, project_id: int, user_id: int) -> List[Dict]:
         self.project(project_id, user_id)
         return self.db.query("SELECT d.*, u.full_name AS uploader FROM documents d JOIN users u ON u.id=d.uploader_id WHERE project_id=? ORDER BY d.created_at DESC", (project_id,))
+
+    def documents_for_projects(self, project_ids: List[int], user_id: int, per_project: int = 4) -> Dict[int, List[Dict]]:
+        if not project_ids:
+            return {}
+        placeholders = ",".join(["?"] * len(project_ids))
+        rows = self.db.query(
+            f"""
+            SELECT project_id, id, uploader_id, name, path, created_at, uploader
+            FROM (
+                SELECT d.*, u.full_name AS uploader,
+                       ROW_NUMBER() OVER (PARTITION BY d.project_id ORDER BY d.created_at DESC, d.id DESC) AS rn
+                FROM documents d
+                JOIN users u ON u.id=d.uploader_id
+                JOIN projects p ON p.id=d.project_id
+                WHERE d.project_id IN ({placeholders})
+                  AND (p.owner_id=? OR p.partner_id=?)
+            ) ranked
+            WHERE rn <= ?
+            ORDER BY project_id, created_at DESC, id DESC
+            """,
+            (*project_ids, user_id, user_id, per_project),
+        )
+        grouped: Dict[int, List[Dict]] = {}
+        for row in rows:
+            grouped.setdefault(row["project_id"], []).append(row)
+        return grouped
 
     # ---------- exports ----------
     def export_summary_csv(self, user_id: int) -> str:
@@ -630,20 +740,41 @@ class CivicBackend:
     def dashboard_counts(self, user_id: int) -> Dict[str, int]:
         role = self.user(user_id)["role"]
         if role == "casual":
-            return {
-                "posts": self._count("SELECT COUNT(*) AS c FROM posts WHERE author_id=?", (user_id,)),
-                "friends": self._count("SELECT COUNT(*) AS c FROM friendships WHERE (requester_id=? OR receiver_id=?) AND status='accepted'", (user_id, user_id)),
-                "notifications": self.unread_count(user_id),
-                "messages": self._count("SELECT COUNT(*) AS c FROM conversations WHERE user_a=? OR user_b=?", (user_id, user_id)),
-            }
+            row = self.db.one(
+                """
+                SELECT
+                    (SELECT COUNT(*) FROM posts WHERE author_id=?) AS posts,
+                    (SELECT COUNT(*) FROM friendships WHERE (requester_id=? OR receiver_id=?) AND status='accepted') AS friends,
+                    (SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0) AS notifications,
+                    (SELECT COUNT(*) FROM conversations WHERE user_a=? OR user_b=?) AS messages
+                """,
+                (user_id, user_id, user_id, user_id, user_id, user_id),
+            ) or {}
+            return {key: int(row.get(key) or 0) for key in ("posts", "friends", "notifications", "messages")}
+        row = self.db.one(
+            """
+            SELECT
+                (SELECT COUNT(*) FROM partner_requests WHERE (requester_id=? OR receiver_id=?) AND status='accepted') AS partners,
+                (SELECT COUNT(*) FROM partner_requests WHERE receiver_id=? AND status='pending') AS pending_requests,
+                (SELECT COUNT(*) FROM agreements WHERE government_id=? OR ngo_id=?) AS agreements,
+                (SELECT COUNT(*) FROM agreements WHERE (government_id=? OR ngo_id=?) AND status IN ('pending', 'changes_requested')) AS pending_agreements,
+                (SELECT COUNT(*) FROM projects WHERE owner_id=? OR partner_id=?) AS projects,
+                (SELECT COUNT(*) FROM reports r JOIN projects p ON p.id=r.project_id WHERE p.owner_id=? OR p.partner_id=?) AS reports,
+                (SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0) AS notifications
+            """,
+            (user_id, user_id, user_id, user_id, user_id, user_id, user_id, user_id, user_id, user_id, user_id, user_id),
+        ) or {}
+        return {key: int(row.get(key) or 0) for key in ("partners", "pending_requests", "agreements", "pending_agreements", "projects", "reports", "notifications")}
+
+    def org_dashboard_snapshot(self, user_id: int) -> Dict[str, object]:
+        self.require_org(user_id)
+        counts = self.dashboard_counts(user_id)
         return {
-            "partners": self._count("SELECT COUNT(*) AS c FROM partner_requests WHERE (requester_id=? OR receiver_id=?) AND status='accepted'", (user_id, user_id)),
-            "pending_requests": self._count("SELECT COUNT(*) AS c FROM partner_requests WHERE receiver_id=? AND status='pending'", (user_id,)),
-            "agreements": self._count("SELECT COUNT(*) AS c FROM agreements WHERE government_id=? OR ngo_id=?", (user_id, user_id)),
-            "pending_agreements": self._count("SELECT COUNT(*) AS c FROM agreements WHERE (government_id=? OR ngo_id=?) AND status IN ('pending', 'changes_requested')", (user_id, user_id)),
-            "projects": self._count("SELECT COUNT(*) AS c FROM projects WHERE owner_id=? OR partner_id=?", (user_id, user_id)),
-            "reports": self._count("SELECT COUNT(*) AS c FROM reports r JOIN projects p ON p.id=r.project_id WHERE p.owner_id=? OR p.partner_id=?", (user_id, user_id)),
-            "notifications": self.unread_count(user_id),
+            "counts": counts,
+            "agreements": self.agreements_for(user_id, limit=6),
+            "projects": self.projects_for(user_id, limit=6),
+            "notifications": self.notifications(user_id, limit=6),
+            "unread": counts["notifications"],
         }
 
     # ---------- seed data ----------

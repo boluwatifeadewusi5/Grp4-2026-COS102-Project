@@ -20,3 +20,4 @@ build/
 .env
 .env.*
 *.sqlite3
+vercel.json

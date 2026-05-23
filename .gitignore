@@ -6,3 +6,8 @@ dist/
 *.spec
 *.log
 .env
+config.json
+*.env
+dist/
+build/
+*.spec

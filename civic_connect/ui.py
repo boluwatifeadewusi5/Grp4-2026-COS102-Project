@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, Optional
 from .theme import T, FONT
+from .icons import get_icon, icon_for_text
 
 
 def clear(widget: tk.Widget):
@@ -13,7 +14,7 @@ def label(parent, text, size=10, color=None, bg=None, weight="normal", anchor="w
     return tk.Label(parent, text=text, font=(FONT, size, weight), fg=color or T.text, bg=bg or parent.cget("bg"), anchor=anchor, justify=justify, wraplength=wrap)
 
 
-def button(parent, text, command: Optional[Callable] = None, variant="primary", width=None, pady=7):
+def button(parent, text, command: Optional[Callable] = None, variant="primary", width=None, pady=7, icon=None):
     colors = {
         "primary": (T.gold, "#111111", T.gold),
         "outline": (T.panel, T.gold, T.gold2),
@@ -22,9 +23,15 @@ def button(parent, text, command: Optional[Callable] = None, variant="primary", 
         "success": (T.panel, T.success, T.success),
     }
     bg, fg, border = colors.get(variant, colors["ghost"])
-    return tk.Button(parent, text=text, command=command, bg=bg, fg=fg, activebackground=T.panel2, activeforeground=fg,
-                     relief="flat", bd=0, highlightthickness=1, highlightbackground=border, padx=12, pady=pady,
-                     width=width, font=(FONT, 9, "bold"), cursor="hand2")
+    icon_name = icon or icon_for_text(text)
+    tone = "dark" if variant == "primary" else "gold"
+    icon_image = get_icon(icon_name, tone=tone) if icon_name else None
+    btn = tk.Button(parent, text=text, command=command, bg=bg, fg=fg, activebackground=T.panel2, activeforeground=fg,
+                    relief="flat", bd=0, highlightthickness=1, highlightbackground=border, padx=12, pady=pady,
+                    width=width, font=(FONT, 9, "bold"), cursor="hand2", compound="left",
+                    image=icon_image)
+    btn._icon_image = icon_image
+    return btn
 
 
 def entry(parent, placeholder="", show: Optional[str] = None):

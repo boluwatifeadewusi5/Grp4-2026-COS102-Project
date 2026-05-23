@@ -211,7 +211,7 @@ class CivicConnectApp(tk.Tk):
         def like():
             try: self.backend.toggle_like(self.current_user["id"],p["id"]); self.show_casual_home()
             except Exception as exc: error(exc)
-        button(acts,("♥" if p["liked_by_me"] else "♡")+f" {p['like_count']}",like,"outline",pady=4).pack(side="left")
+        button(acts,("♥" if p["liked_by_me"] else "♡")+f" {p['like_count']}",like,"outline",pady=4,icon="heart").pack(side="left")
         label(acts,f"💬 {p['comment_count']}",10,T.muted,T.panel).pack(side="left",padx=12)
         ce=entry(acts,"Write a comment..."); ce.pack(side="left",fill="x",expand=True,ipady=6,padx=8)
         def comment():
@@ -373,7 +373,7 @@ class CivicConnectApp(tk.Tk):
                 def filepick():
                     p=filedialog.askopenfilename();
                     if p: att.set(p.split('/')[-1])
-                button(row,"📎",filepick,"outline",width=4).pack(side="left",padx=5)
+                button(row,"ATTACH",filepick,"outline",width=8,icon="paperclip").pack(side="left",padx=5)
                 def send():
                     try: self.backend.send_message(uid,conv["other_id"],get_entry(e),att.get()); self.show_messages(active)
                     except Exception as exc: error(exc)

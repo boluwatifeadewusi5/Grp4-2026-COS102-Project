@@ -62,7 +62,7 @@ dist/CivicConnect.exe
 The build script uses PyInstaller with:
 
 ```bash
-pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect main.py
+pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" main.py
 ```
 
 Useful resource:

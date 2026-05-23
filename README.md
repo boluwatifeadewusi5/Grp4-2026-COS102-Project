@@ -30,6 +30,7 @@ Government:       gov@demo.com
 
 - Optional hosted Postgres database mode through `CIVIC_CONNECT_DATABASE_URL`.
 - GitHub Pages-ready showcase/download website in `docs/`.
+- Local Iconify/Lucide icon assets in `rescources/`, rendered as PNGs for Tkinter buttons.
 - Search posts by topic, body, or author.
 - Search suggested casual users.
 - Search discoverable NGO/Government partners.
@@ -134,7 +135,7 @@ dist/CivicConnect.exe
 You can also run PyInstaller directly:
 
 ```bash
-pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect main.py
+pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" main.py
 ```
 
 ## Free Distribution And Hosting
@@ -161,12 +162,17 @@ build_windows.bat
 docs/
   index.html
   styles.css
+rescources/
+  ICONIFY_SOURCES.txt
+  *.svg
+  *.png
 .github/workflows/windows-build.yml
 civic_connect/
   __init__.py
   app.py
   backend.py
   db.py
+  icons.py
   theme.py
   ui.py
 ```

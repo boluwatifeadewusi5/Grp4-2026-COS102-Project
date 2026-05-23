@@ -12,22 +12,22 @@ Vercel hosts the **static webpage** in `docs/`. It does **not** run the Tkinter 
 | Install Command | *(empty)* |
 | Output Directory | *(empty when Root Directory is `docs`)* |
 
-## Avoid the Python error
+## Why `app/` was renamed to `desktop/`
 
-If Vercel reports:
+Vercel’s Python builder looks specifically for `app/main.py` as a web API entrypoint. This project’s launcher is a **desktop GUI**, not Flask/FastAPI. Renaming `app/` → `desktop/` removes that false match.
 
-`Found app/main.py but it does not export a top-level "app"...`
+## If the build still fails
 
-that means it is trying to deploy Python code, not the website. Fix it by setting **Root Directory** to **`docs`**, or ensure `app/main.py` does not exist in the branch you deploy.
+1. Confirm **Root Directory** is `docs`, not `.`
+2. Redeploy after pushing the latest `vercel.json` and `.vercelignore`
+3. In the failed deployment, check that no step runs `pip install` or Python functions
 
-## Deploy steps
+## What gets deployed
 
-1. Push this repository to GitHub.
-2. Import the repo on [Vercel](https://vercel.com/new).
-3. Set **Root Directory** to **`docs`**.
-4. Leave build and install commands empty.
-5. Deploy.
+Only static assets from `docs/`:
 
-## Download button
+- `index.html`
+- `styles.css`
+- `.nojekyll`
 
-The site serves `test.txt` from this folder for prototype testing. When the Windows `.exe` is ready, upload it to GitHub Releases and update the primary button `href` in `docs/index.html` (see `docs/README.md`).
+The EXE is distributed via **GitHub Releases**, linked from the download button.

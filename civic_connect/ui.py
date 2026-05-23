@@ -4,7 +4,7 @@ from typing import Callable, Optional
 from .theme import T, FONT
 from .icons import get_icon
 
-
+#defining functions for creating ui components eg(Label, button, entry etc..)
 def clear(widget: tk.Widget):
     for child in widget.winfo_children():
         child.destroy()
@@ -111,7 +111,7 @@ def toast(title: str, body: str = ""):
 def error(exc: Exception):
     messagebox.showerror("Civic Connect", str(exc))
 
-
+#defining the scrollable and modal classes for the ui
 class Scroll(tk.Frame):
     def __init__(self, parent, bg=None):
         super().__init__(parent, bg=bg or T.bg)

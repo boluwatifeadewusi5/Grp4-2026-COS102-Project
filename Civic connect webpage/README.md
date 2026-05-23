@@ -1,6 +1,11 @@
 # Civic Connect webpage (working copy)
 
-Edit files here, then **copy into `docs/`** before pushing — Vercel and GitHub Pages only publish **`docs/`**.
+Edit files here during development, then copy changes into **`docs/`** before pushing.
+
+- **GitHub Pages** publishes `/docs` on `main`.
+- **Vercel** should use Root Directory **`docs`** (see `VERCEL.md`).
+
+Quick sync from repo root (PowerShell):
 
 ```powershell
 Copy-Item "Civic connect webpage\index.html" "docs\index.html" -Force

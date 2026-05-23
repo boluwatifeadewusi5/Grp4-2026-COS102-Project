@@ -1,31 +1,43 @@
-# Civic Connect Website
+# Civic Connect — public website
 
-This folder is ready for GitHub Pages.
+Static landing page for Civic Connect. The **desktop app is not hosted here** — users download the Windows `.exe` from GitHub Releases.
 
-## Live URL (after Pages is enabled)
+## Deploy on Vercel (recommended)
 
-https://boluwatifeadewusi5.github.io/Grp4-2026-COS102-Project/
+1. Import the GitHub repo in [Vercel](https://vercel.com/new).
+2. **Root Directory:** set to **`docs`** (Project Settings → General). This is the most important step — it stops Vercel from scanning `desktop/main.py` as a Python web app.
+3. **Framework Preset:** Other (or leave as detected static).
+4. **Build Command / Install Command:** leave empty.
+5. Deploy.
 
-## Deploy checklist
+If you deploy from the repository root instead of `docs`, the root `vercel.json` sends output from `docs/` and `.vercelignore` excludes Python code — but **Root Directory = `docs` is still preferred.**
 
-1. Merge these files to `main`.
-2. In the repo on GitHub: **Settings → Pages**.
-3. Source: **Deploy from a branch**.
-4. Branch: **main**, folder: **/docs**.
-5. Save and wait for the green deployment message.
+Live site files in this folder:
+
+- `index.html` — landing page
+- `styles.css` — styles
+- `vercel.json` — static site settings
+- `package.json` — marks project as static (no Python build)
+
+## Deploy on GitHub Pages
+
+1. Push to GitHub on branch `main`.
+2. **Settings → Pages** → Source: branch **`main`**, folder **`/docs`**.
+3. Site URL: https://boluwatifeadewusi5.github.io/Grp4-2026-COS102-Project/
 
 ## Download button
 
-- **Now:** `test.txt` in this folder (relative link — works on Pages without extra hosting).
-- **Later:** Upload `CivicConnect.exe` to [Releases](https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases) and set the primary button `href` to:
+The primary button links to the latest GitHub Release EXE:
 
-  `https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest/download/CivicConnect.exe`
+`https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest/download/CivicConnect.exe`
+
+Build the EXE with `build_windows.bat` or the GitHub Actions workflow, then attach `CivicConnect.exe` to a release.
 
 ## Local preview
 
-```bash
-cd docs
+```powershell
+Set-Location docs
 python -m http.server 8080
 ```
 
-Open http://127.0.0.1:8080 and click **Download Civic Connect**.
+Open http://127.0.0.1:8080

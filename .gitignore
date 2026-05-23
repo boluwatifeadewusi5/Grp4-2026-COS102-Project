@@ -8,3 +8,8 @@ dist/
 .env
 *.json
 config.json
+config.json
+*.env
+dist/
+build/
+*.spec

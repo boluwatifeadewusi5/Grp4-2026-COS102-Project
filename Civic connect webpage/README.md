@@ -1,6 +1,9 @@
 # Civic Connect webpage (working copy)
 
-Edit files here during development, then copy changes into **`docs/`** before pushing — GitHub Pages only publishes **`/docs`**.
+Edit files here during development, then copy changes into **`docs/`** before pushing.
+
+- **GitHub Pages** publishes `/docs` on `main`.
+- **Vercel** should use Root Directory **`docs`** (see `VERCEL.md`).
 
 Quick sync from repo root (PowerShell):
 

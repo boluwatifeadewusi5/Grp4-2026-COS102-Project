@@ -1,31 +1,19 @@
-# Civic Connect — GitHub Pages site
+# Civic Connect Website
 
-This folder is the **published** copy of the landing page. GitHub Pages serves files from `/docs` on the `main` branch.
+This folder is ready for GitHub Pages.
 
-## Live URL (after Pages is enabled)
+Recommended setup:
 
-https://boluwatifeadewusi5.github.io/Grp4-2026-COS102-Project/
+1. Push the project to GitHub.
+2. Go to repository `Settings > Pages`.
+3. Set source to `Deploy from a branch`.
+4. Choose branch `main` and folder `/docs`.
+5. Save.
 
-## Deploy checklist
+Before publishing, edit the download link in `index.html`:
 
-1. Merge these files to `main`.
-2. In the repo on GitHub: **Settings → Pages**.
-3. Source: **Deploy from a branch**.
-4. Branch: **main**, folder: **/docs**.
-5. Save and wait for the green deployment message.
-
-## Download button
-
-- **Now:** `test.txt` in this folder (relative link — works on Pages without extra hosting).
-- **Later:** Upload `CivicConnect.exe` to [Releases](https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases) and set the primary button `href` to:
-
-  `https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest/download/CivicConnect.exe`
-
-## Local preview
-
-```bash
-cd docs
-python -m http.server 8080
+```html
+https://github.com/YOUR_USERNAME/YOUR_REPOSITORY/releases/latest/download/CivicConnect.exe
 ```
 
-Open http://127.0.0.1:8080 and click **Download Civic Connect**.
+Replace `YOUR_USERNAME/YOUR_REPOSITORY` with your real GitHub repository path.

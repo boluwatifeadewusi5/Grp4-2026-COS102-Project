@@ -9,7 +9,7 @@ from .ui import clear, label, button, entry, get_entry, text_box, card, tag, Scr
 class CivicConnectApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Civic Connect — Full Working Tkinter + SQLite")
+        self.title("Civic Connect - Full Working Tkinter + SQLite")
         self.geometry("1320x850")
         self.minsize(1120, 720)
         self.configure(bg=T.bg)
@@ -59,16 +59,33 @@ class CivicConnectApp(tk.Tk):
     def nav(self, public=True):
         n = tk.Frame(self.root, bg=T.bg, height=58)
         n.pack(fill="x"); n.pack_propagate(False)
-        label(n, "▛  CIVIC CONNECT", 16, T.gold, T.bg, "bold").pack(side="left", padx=26)
+        label(n, "CIVIC CONNECT", 16, T.gold, T.bg, "bold").pack(side="left", padx=26)
         if public:
             for txt, cmd in [("HOME", self.show_landing), ("COMMUNITY", self.show_landing), ("RESOURCES", self.show_landing)]:
-                button(n, txt, cmd, "ghost", pady=5).pack(side="left", padx=4)
-            button(n, "LOG IN", self.show_login, "outline", width=10, pady=6).pack(side="right", padx=(4, 26))
-            button(n, "SIGN UP", self.show_signup, "primary", width=10, pady=6).pack(side="right", padx=4)
+                button(n, txt, cmd, "ghost", pady=5, icon=self.icon_for_nav(txt)).pack(side="left", padx=4)
+            button(n, "LOG IN", self.show_login, "outline", width=10, pady=6, icon="log-in").pack(side="right", padx=(4, 26))
+            button(n, "SIGN UP", self.show_signup, "primary", width=10, pady=6, icon="user-plus").pack(side="right", padx=4)
         else:
             unread = self.backend.unread_count(self.current_user["id"])
-            label(n, f"🔔 {unread}   {self.current_user['full_name']} ({self.current_user['role'].title()})", 10, T.text, T.bg, "bold").pack(side="right", padx=26)
-            button(n, "LOG OUT", self.logout, "outline", width=10, pady=6).pack(side="right", padx=4)
+            label(n, f"Alerts: {unread} | {self.current_user['full_name']} ({self.current_user['role'].title()})", 10, T.text, T.bg, "bold").pack(side="right", padx=26)
+            button(n, "LOG OUT", self.logout, "outline", width=10, pady=6, icon="log-out").pack(side="right", padx=4)
+
+    def icon_for_nav(self, name: str) -> str:
+        return {
+            "HOME": "home",
+            "COMMUNITY": "users",
+            "RESOURCES": "file-check-2",
+            "Feed": "rss",
+            "Friends": "users",
+            "Messages": "message-circle",
+            "Profile": "settings",
+            "Notifications": "bell",
+            "Dashboard": "layout-dashboard",
+            "Partners": "handshake",
+            "Agreements": "file-check-2",
+            "Projects": "folder-kanban",
+            "Reports": "bar-chart-3",
+        }.get(name, "home")
 
     def logout(self):
         self.current_user = None
@@ -96,12 +113,12 @@ class CivicConnectApp(tk.Tk):
         label(left, "CREATE IMPACT.", 34, T.gold, T.bg, "bold").pack(anchor="w")
         label(left, "Government Agencies and NGOs connect, message, approve agreements, manage projects and reports.\nCasual Users have a separate social space with posts, comments, likes, friends, and private messages.", 12, T.muted, T.bg, wrap=600).pack(anchor="w", pady=18)
         row = tk.Frame(left, bg=T.bg); row.pack(anchor="w")
-        button(row, "GET STARTED →", self.show_signup, "primary", width=18).pack(side="left", padx=(0,10))
-        button(row, "LOG IN", self.show_login, "outline", width=14).pack(side="left")
+        button(row, "GET STARTED", self.show_signup, "primary", width=18, icon="user-plus").pack(side="left", padx=(0,10))
+        button(row, "LOG IN", self.show_login, "outline", width=14, icon="log-in").pack(side="left")
         c = tk.Canvas(right, width=430, height=280, bg=T.bg, highlightthickness=0); c.pack(anchor="center")
-        c.create_oval(165, 60, 285, 180, outline=T.gold2, width=2); c.create_text(225,120,text="▛",fill=T.gold,font=(FONT,42,"bold"))
-        for x,y,t in [(225,30,"🤝"),(70,125,"👥"),(380,125,"🌐"),(225,245,"💬")]:
-            c.create_line(225,120,x,y,fill=T.gold2,dash=(3,3)); c.create_oval(x-30,y-30,x+30,y+30,outline=T.border,width=2); c.create_text(x,y,text=t,font=(FONT,20),fill=T.text)
+        c.create_oval(165, 60, 285, 180, outline=T.gold2, width=2); c.create_text(225,120,text="CC",fill=T.gold,font=(FONT,30,"bold"))
+        for x,y,t in [(225,30,"PARTNER"),(70,125,"USERS"),(380,125,"CLOUD"),(225,245,"CHAT")]:
+            c.create_line(225,120,x,y,fill=T.gold2,dash=(3,3)); c.create_oval(x-34,y-24,x+34,y+24,outline=T.border,width=2); c.create_text(x,y,text=t,font=(FONT,8,"bold"),fill=T.text)
         c.create_text(225,270,text="Strict role separation enforced by backend",fill=T.muted,font=(FONT,9,"bold"))
         stats = tk.Frame(main,bg=T.bg,pady=24); stats.pack(fill="x")
         for title,val,sub,color in [("Casual Users","4 demo","Posts, friends, messages",T.blue),("NGOs","3 demo","Partnerships and reports",T.red),("Government","2 demo","Review and approvals",T.green),("Backend","SQLite","Fully persistent local DB",T.gold)]:
@@ -117,14 +134,23 @@ class CivicConnectApp(tk.Tk):
     def stat(self,parent,title,value,sub,color):
         o,i=card(parent); label(i,value,22,color,T.panel,"bold").pack(anchor="w"); label(i,title,10,T.text,T.panel,"bold").pack(anchor="w"); label(i,sub,9,T.muted,T.panel).pack(anchor="w",pady=(4,0)); return o
 
+    def stat_grid(self, parent, items, columns=4):
+        grid = tk.Frame(parent, bg=T.bg)
+        for idx, (title, value, sub, color) in enumerate(items):
+            tile = self.stat(grid, title, value, sub, color)
+            tile.grid(row=idx // columns, column=idx % columns, sticky="ew", padx=5, pady=5)
+        for col in range(columns):
+            grid.grid_columnconfigure(col, weight=1, uniform="metric")
+        return grid
+
     def role_card(self,parent,title,body,color):
-        o,i=card(parent); label(i,"●",36,color,T.panel,"bold",anchor="center").pack(fill="x"); label(i,title,14,color,T.panel,"bold",anchor="center").pack(fill="x"); label(i,body,10,T.muted,T.panel,wrap=300,anchor="center",justify="center").pack(fill="x",pady=10); return o
+        o,i=card(parent); label(i,title[:1],36,color,T.panel,"bold",anchor="center").pack(fill="x"); label(i,title,14,color,T.panel,"bold",anchor="center").pack(fill="x"); label(i,body,10,T.muted,T.panel,wrap=300,anchor="center",justify="center").pack(fill="x",pady=10); return o
 
     def show_login(self):
         self.reset(); self.nav(public=True)
         main=tk.Frame(self.root,bg=T.bg,padx=40,pady=40); main.pack(fill="both",expand=True)
         o,i=card(main,padx=36,pady=32); o.place(relx=.5,rely=.43,anchor="center",width=500)
-        label(i,"▛",36,T.gold,T.panel,"bold",anchor="center").pack(fill="x")
+        label(i,"CC",28,T.gold,T.panel,"bold",anchor="center").pack(fill="x")
         label(i,"WELCOME BACK",23,T.gold,T.panel,"bold",anchor="center").pack(fill="x",pady=(4,8))
         em=entry(i,"Email"); em.pack(fill="x",ipady=10,pady=7)
         pw=entry(i,"Password",show="*"); pw.pack(fill="x",ipady=10,pady=7)
@@ -132,8 +158,8 @@ class CivicConnectApp(tk.Tk):
             try:
                 self.start_session(self.backend.login(get_entry(em),get_entry(pw))); self.route_home()
             except Exception as exc: error(exc)
-        button(i,"LOG IN →",do_login,"primary").pack(fill="x",pady=14)
-        label(i,"Demo: alex@demo.com, ngo@demo.com, gov@demo.com — password: password",9,T.muted,T.panel,wrap=430,anchor="center").pack(fill="x")
+        button(i,"LOG IN",do_login,"primary",icon="log-in").pack(fill="x",pady=14)
+        label(i,"Demo: alex@demo.com, ngo@demo.com, gov@demo.com - password: password",9,T.muted,T.panel,wrap=430,anchor="center").pack(fill="x")
         bottom=tk.Frame(i,bg=T.panel); bottom.pack(pady=10)
         label(bottom,"No account? ",9,T.muted,T.panel).pack(side="left"); button(bottom,"Sign up",self.show_signup,"ghost",pady=2).pack(side="left")
 
@@ -157,7 +183,7 @@ class CivicConnectApp(tk.Tk):
                 uid=self.backend.create_user(get_entry(fields["full_name"]),get_entry(fields["email"]),get_entry(pw),role.get(),get_entry(fields["phone"]),get_entry(fields["org"]),get_entry(fields["location"]),self.text_value(bio,"Short bio"))
                 self.start_session(self.backend.user(uid)); self.route_home()
             except Exception as exc: error(exc)
-        button(i,"CREATE ACCOUNT →",do_signup,"primary").pack(fill="x",pady=12)
+        button(i,"CREATE ACCOUNT",do_signup,"primary",icon="user-plus").pack(fill="x",pady=12)
 
     # ---------- shell ----------
     def shell(self, active:str):
@@ -171,8 +197,8 @@ class CivicConnectApp(tk.Tk):
         else:
             items=[("Dashboard",self.show_org_home),("Partners",self.show_partners),("Messages",self.show_org_messages),("Agreements",self.show_agreements),("Projects",self.show_projects),("Reports",self.show_reports),("Notifications",self.show_notifications)]
         for name,cmd in items:
-            button(side,name,cmd,"primary" if name==active else "ghost",pady=9).pack(fill="x",pady=3)
-        button(side,"Landing Page",self.show_landing,"outline",pady=7).pack(side="bottom",fill="x")
+            button(side,name,cmd,"primary" if name==active else "ghost",pady=9,icon=self.icon_for_nav(name)).pack(fill="x",pady=3)
+        button(side,"Landing Page",self.show_landing,"outline",pady=7,icon="home").pack(side="bottom",fill="x")
         content=Scroll(layout,T.bg); content.pack(side="left",fill="both",expand=True)
         body=tk.Frame(content.content,bg=T.bg,padx=26,pady=22); body.pack(fill="both",expand=True)
         return body
@@ -183,41 +209,42 @@ class CivicConnectApp(tk.Tk):
         counts=self.backend.dashboard_counts(uid)
         label(body,"Casual Social Feed",22,T.text,T.bg,"bold").pack(anchor="w")
         label(body,"Only Casual Users can post, like, comment, add friends, and message here.",10,T.muted,T.bg).pack(anchor="w",pady=(0,12))
-        button(body,"EXPORT CSV",self.export_summary,"outline",width=14).pack(anchor="e")
-        st=tk.Frame(body,bg=T.bg); st.pack(fill="x")
-        for k,v,c in [("Posts",counts["posts"],T.blue),("Friends",counts["friends"],T.green),("Messages",counts["messages"],T.gold),("Unread",counts["notifications"],T.warning)]: self.stat(st,k,str(v),"live from SQLite",c).pack(side="left",fill="x",expand=True,padx=5)
+        button(body,"EXPORT CSV",self.export_summary,"outline",width=14,icon="download").pack(anchor="e")
+        metric_items=[("Posts",str(counts["posts"]),"live from SQLite",T.blue),("Friends",str(counts["friends"]),"live from SQLite",T.green),("Messages",str(counts["messages"]),"live from SQLite",T.gold),("Unread",str(counts["notifications"]),"live from SQLite",T.warning)]
+        self.stat_grid(body,metric_items,columns=4).pack(fill="x")
         search_row=tk.Frame(body,bg=T.bg); search_row.pack(fill="x",pady=(12,0))
         search=entry(search_row,"Search posts, topics, people"); self.set_entry_value(search,self.feed_search); search.pack(side="left",fill="x",expand=True,ipady=7)
         def apply_search():
             self.feed_search=get_entry(search); self.show_casual_home()
-        button(search_row,"SEARCH",apply_search,"outline",width=10,pady=4).pack(side="left",padx=6)
+        button(search_row,"SEARCH",apply_search,"outline",width=10,pady=4,icon="search").pack(side="left",padx=6)
         if self.feed_search:
-            button(search_row,"CLEAR",lambda:(setattr(self,"feed_search",""),self.show_casual_home()),"ghost",width=8,pady=4).pack(side="left")
+            button(search_row,"CLEAR",lambda:(setattr(self,"feed_search",""),self.show_casual_home()),"ghost",width=8,pady=4,icon="x").pack(side="left")
         comp_o,comp=card(body); comp_o.pack(fill="x",pady=12)
         new=text_box(comp,3); new.pack(fill="x"); new.insert("1.0","What's on your mind?")
         topic=entry(comp,"Topic e.g. Community"); topic.pack(fill="x",ipady=7,pady=6)
         def post():
             try: self.backend.create_post(uid,self.text_value(new,"What's on your mind?"),get_entry(topic) or "General"); self.show_casual_home()
             except Exception as exc: error(exc)
-        button(comp,"POST",post,"primary",width=12).pack(anchor="e")
+        button(comp,"POST",post,"primary",width=12,icon="plus").pack(anchor="e")
         for p in self.backend.feed(uid,self.feed_search):
             self.post_widget(body,p)
 
     def post_widget(self,parent,p):
         o,i=card(parent); o.pack(fill="x",pady=8)
-        label(i,f"{p['full_name']}  •  {p['topic']}  •  {p['created_at']}",10,T.gold,T.panel,"bold").pack(anchor="w")
+        label(i,f"{p['full_name']} | {p['topic']} | {p['created_at']}",10,T.gold,T.panel,"bold").pack(anchor="w")
         label(i,p["body"],11,T.text,T.panel,wrap=850).pack(anchor="w",pady=8)
         acts=tk.Frame(i,bg=T.panel); acts.pack(fill="x")
         def like():
             try: self.backend.toggle_like(self.current_user["id"],p["id"]); self.show_casual_home()
             except Exception as exc: error(exc)
-        button(acts,("♥" if p["liked_by_me"] else "♡")+f" {p['like_count']}",like,"outline",pady=4,icon="heart").pack(side="left")
-        label(acts,f"💬 {p['comment_count']}",10,T.muted,T.panel).pack(side="left",padx=12)
+        like_text = f"{'LIKED' if p['liked_by_me'] else 'LIKE'} {p['like_count']}"
+        button(acts,like_text,like,"outline",pady=4,icon="heart").pack(side="left")
+        label(acts,f"Comments {p['comment_count']}",10,T.muted,T.panel).pack(side="left",padx=12)
         ce=entry(acts,"Write a comment..."); ce.pack(side="left",fill="x",expand=True,ipady=6,padx=8)
         def comment():
             try: self.backend.add_comment(self.current_user["id"],p["id"],get_entry(ce)); self.show_casual_home()
             except Exception as exc: error(exc)
-        button(acts,"COMMENT",comment,"primary",pady=4).pack(side="left")
+        button(acts,"COMMENT",comment,"primary",pady=4,icon="message-square").pack(side="left")
         for c in self.backend.comments_for_post(p["id"])[-3:]:
             label(i,f"   {c['full_name']}: {c['body']}",9,T.muted,T.panel,wrap=800).pack(anchor="w",pady=2)
 
@@ -228,24 +255,27 @@ class CivicConnectApp(tk.Tk):
         search=entry(search_row,"Search suggested users"); self.set_entry_value(search,self.friend_search); search.pack(side="left",fill="x",expand=True,ipady=7)
         def apply_search():
             self.friend_search=get_entry(search); self.show_friends()
-        button(search_row,"SEARCH",apply_search,"outline",width=10,pady=4).pack(side="left",padx=6)
+        button(search_row,"SEARCH",apply_search,"outline",width=10,pady=4,icon="search").pack(side="left",padx=6)
         if self.friend_search:
-            button(search_row,"CLEAR",lambda:(setattr(self,"friend_search",""),self.show_friends()),"ghost",width=8,pady=4).pack(side="left")
+            button(search_row,"CLEAR",lambda:(setattr(self,"friend_search",""),self.show_friends()),"ghost",width=8,pady=4,icon="x").pack(side="left")
         data=self.backend.friends_and_requests(uid)
         cols=tk.Frame(body,bg=T.bg); cols.pack(fill="x",pady=10)
-        for title,items in [("Friends",data["friends"]),("Incoming Requests",data["incoming"]),("Sent Requests",data["outgoing"]),("Suggested Users",self.backend.suggested_casual_users(uid,self.friend_search))]:
-            o,i=card(cols); o.pack(side="left",fill="both",expand=True,padx=5)
+        sections=[("Friends",data["friends"]),("Incoming Requests",data["incoming"]),("Sent Requests",data["outgoing"]),("Suggested Users",self.backend.suggested_casual_users(uid,self.friend_search))]
+        for idx,(title,items) in enumerate(sections):
+            o,i=card(cols); o.grid(row=idx//2,column=idx%2,sticky="nsew",padx=5,pady=5)
             label(i,title,12,T.gold,T.panel,"bold").pack(anchor="w")
             for item in items:
                 r=tk.Frame(i,bg=T.panel2,padx=8,pady=6); r.pack(fill="x",pady=4)
                 label(r,item["full_name"],9,T.text,T.panel2,"bold").pack(anchor="w")
                 if title=="Incoming Requests":
-                    button(r,"ACCEPT",lambda fid=item["id"]: self.respond_friend(fid,True),"primary",pady=3).pack(side="left",padx=2)
-                    button(r,"REJECT",lambda fid=item["id"]: self.respond_friend(fid,False),"danger",pady=3).pack(side="left",padx=2)
+                    button(r,"ACCEPT",lambda fid=item["id"]: self.respond_friend(fid,True),"primary",pady=3,icon="check").pack(side="left",padx=2)
+                    button(r,"REJECT",lambda fid=item["id"]: self.respond_friend(fid,False),"danger",pady=3,icon="x").pack(side="left",padx=2)
                 elif title=="Suggested Users":
-                    button(r,"ADD FRIEND",lambda rid=item["id"]: self.add_friend(rid),"outline",pady=3).pack(anchor="e")
+                    button(r,"ADD FRIEND",lambda rid=item["id"]: self.add_friend(rid),"outline",pady=3,icon="user-plus").pack(anchor="e")
                 elif title=="Friends":
-                    button(r,"MESSAGE",lambda rid=item["other_id"]: self.open_casual_conversation(rid),"outline",pady=3).pack(anchor="e")
+                    button(r,"MESSAGE",lambda rid=item["other_id"]: self.open_casual_conversation(rid),"outline",pady=3,icon="message-circle").pack(anchor="e")
+        for col in range(2):
+            cols.grid_columnconfigure(col,weight=1,uniform="friend_section")
 
     def add_friend(self,rid):
         try: self.backend.send_friend_request(self.current_user["id"],rid); self.show_friends()
@@ -270,17 +300,16 @@ class CivicConnectApp(tk.Tk):
             try:
                 self.backend.update_profile(u["id"],get_entry(fields["full_name"]),get_entry(fields["phone"]),get_entry(fields["location"]),get_entry(fields["bio"])); self.current_user=self.backend.user(u["id"]); toast("Saved","Profile updated.")
             except Exception as exc: error(exc)
-        button(body,"SAVE PROFILE",save,"primary",width=18).pack(anchor="e",pady=12)
+        button(body,"SAVE PROFILE",save,"primary",width=18,icon="check").pack(anchor="e",pady=12)
 
     # ---------- org ----------
     def show_org_home(self):
         body=self.shell("Dashboard"); uid=self.current_user["id"]; counts=self.backend.dashboard_counts(uid)
         label(body,f"{self.current_user['role'].title()} Dashboard",22,T.text,T.bg,"bold").pack(anchor="w")
         label(body,"Government and NGO workspaces are separate from Casual Users. Partnerships must be accepted before messages and agreements.",10,T.muted,T.bg,wrap=900).pack(anchor="w",pady=(0,12))
-        button(body,"EXPORT CSV",self.export_summary,"outline",width=14).pack(anchor="e")
-        st=tk.Frame(body,bg=T.bg); st.pack(fill="x")
-        for k in ["partners","pending_requests","agreements","pending_agreements","projects","reports","notifications"]:
-            self.stat(st,k.replace("_"," ").title(),str(counts[k]),"live metric",T.gold if "pending" in k else T.green).pack(side="left",fill="x",expand=True,padx=4)
+        button(body,"EXPORT CSV",self.export_summary,"outline",width=14,icon="download").pack(anchor="e")
+        metric_items=[(k.replace("_"," ").title(),str(counts[k]),"live metric",T.gold if "pending" in k else T.green) for k in ["partners","pending_requests","agreements","pending_agreements","projects","reports","notifications"]]
+        self.stat_grid(body,metric_items,columns=4).pack(fill="x")
         panels=tk.Frame(body,bg=T.bg,pady=14); panels.pack(fill="x")
         self.org_list_panel(panels,"Recent Agreements",self.backend.agreements_for(uid),"title","status").pack(side="left",fill="both",expand=True,padx=6)
         self.org_list_panel(panels,"Projects",self.backend.projects_for(uid),"title","status").pack(side="left",fill="both",expand=True,padx=6)
@@ -312,9 +341,9 @@ class CivicConnectApp(tk.Tk):
         search=entry(search_row,"Search discoverable organizations"); self.set_entry_value(search,self.partner_search); search.pack(side="left",fill="x",expand=True,ipady=7)
         def apply_search():
             self.partner_search=get_entry(search); self.show_partners()
-        button(search_row,"SEARCH",apply_search,"outline",width=10,pady=4).pack(side="left",padx=6)
+        button(search_row,"SEARCH",apply_search,"outline",width=10,pady=4,icon="search").pack(side="left",padx=6)
         if self.partner_search:
-            button(search_row,"CLEAR",lambda:(setattr(self,"partner_search",""),self.show_partners()),"ghost",width=8,pady=4).pack(side="left")
+            button(search_row,"CLEAR",lambda:(setattr(self,"partner_search",""),self.show_partners()),"ghost",width=8,pady=4,icon="x").pack(side="left")
         data=self.backend.partners_and_requests(uid)
         sections=[("Accepted Partners",data["partners"]),("Incoming Requests",data["incoming"]),("Outgoing Requests",data["outgoing"]),("Discover",self.backend.discover_orgs(uid,self.partner_search))]
         for title,items in sections:
@@ -323,12 +352,12 @@ class CivicConnectApp(tk.Tk):
                 r=tk.Frame(i,bg=T.panel2,padx=10,pady=8); r.pack(fill="x",pady=4)
                 nm=item.get("organization_name") or item.get("full_name"); label(r,nm,10,T.text,T.panel2,"bold").pack(side="left")
                 if title=="Incoming Requests":
-                    button(r,"ACCEPT",lambda rid=item["id"]: self.respond_partner(rid,True),"primary",pady=3).pack(side="right",padx=3)
-                    button(r,"REJECT",lambda rid=item["id"]: self.respond_partner(rid,False),"danger",pady=3).pack(side="right",padx=3)
-                elif title=="Discover": button(r,"CONNECT",lambda oid=item["id"]: self.partner_request(oid),"outline",pady=3).pack(side="right")
+                    button(r,"ACCEPT",lambda rid=item["id"]: self.respond_partner(rid,True),"primary",pady=3,icon="check").pack(side="right",padx=3)
+                    button(r,"REJECT",lambda rid=item["id"]: self.respond_partner(rid,False),"danger",pady=3,icon="x").pack(side="right",padx=3)
+                elif title=="Discover": button(r,"CONNECT",lambda oid=item["id"]: self.partner_request(oid),"outline",pady=3,icon="handshake").pack(side="right")
                 elif title=="Accepted Partners":
-                    button(r,"MESSAGE",lambda oid=item["other_id"]: self.open_org_conversation(oid),"outline",pady=3).pack(side="right",padx=3)
-                    button(r,"NEW AGREEMENT",lambda oid=item["other_id"]: self.new_agreement_modal(oid),"primary",pady=3).pack(side="right",padx=3)
+                    button(r,"MESSAGE",lambda oid=item["other_id"]: self.open_org_conversation(oid),"outline",pady=3,icon="message-circle").pack(side="right",padx=3)
+                    button(r,"NEW AGREEMENT",lambda oid=item["other_id"]: self.new_agreement_modal(oid),"primary",pady=3,icon="file-check-2").pack(side="right",padx=3)
 
     def partner_request(self,oid):
         try: self.backend.send_partner_request(self.current_user["id"],oid,"Requesting partnership through Civic Connect."); self.show_partners()
@@ -365,7 +394,7 @@ class CivicConnectApp(tk.Tk):
                     bg=T.panel3 if m["sender_id"]==uid else T.panel2
                     b=tk.Frame(msg_area,bg=bg,padx=10,pady=7); b.pack(anchor="e" if m["sender_id"]==uid else "w",pady=4,padx=6)
                     label(b,m["full_name"],8,T.gold,bg,"bold").pack(anchor="w")
-                    attach=("\n📎 "+m["attachment_name"]) if m["attachment_name"] else ""
+                    attach=("\nAttachment: "+m["attachment_name"]) if m["attachment_name"] else ""
                     label(b,m["body"]+attach,9,T.text,bg,wrap=500).pack(anchor="w")
                 row=tk.Frame(center,bg=T.panel); row.pack(fill="x")
                 e=entry(row,"Type your message..."); e.pack(side="left",fill="x",expand=True,ipady=9)
@@ -377,7 +406,7 @@ class CivicConnectApp(tk.Tk):
                 def send():
                     try: self.backend.send_message(uid,conv["other_id"],get_entry(e),att.get()); self.show_messages(active)
                     except Exception as exc: error(exc)
-                button(row,"SEND",send,"primary",width=8).pack(side="left")
+                button(row,"SEND",send,"primary",width=8,icon="send").pack(side="left")
         else: label(center,"Select a conversation.",11,T.muted,T.panel).pack(anchor="w")
 
     # ---------- agreements ----------
@@ -390,9 +419,9 @@ class CivicConnectApp(tk.Tk):
         cb=ttk.Combobox(filter_row,textvariable=status,values=["all","pending","changes_requested","approved","rejected","active","completed"],width=20,state="readonly"); cb.pack(side="left",padx=6)
         def apply_filters():
             self.agreement_search=get_entry(search); self.agreement_status_filter=status.get(); self.show_agreements()
-        button(filter_row,"FILTER",apply_filters,"outline",width=10,pady=4).pack(side="left")
+        button(filter_row,"FILTER",apply_filters,"outline",width=10,pady=4,icon="search").pack(side="left")
         if self.agreement_search or self.agreement_status_filter!="all":
-            button(filter_row,"CLEAR",lambda:(setattr(self,"agreement_search",""),setattr(self,"agreement_status_filter","all"),self.show_agreements()),"ghost",width=8,pady=4).pack(side="left",padx=6)
+            button(filter_row,"CLEAR",lambda:(setattr(self,"agreement_search",""),setattr(self,"agreement_status_filter","all"),self.show_agreements()),"ghost",width=8,pady=4,icon="x").pack(side="left",padx=6)
         agreements=self.backend.agreements_for(uid,self.agreement_search,self.agreement_status_filter)
         for a in agreements:
             o,i=card(body); o.pack(fill="x",pady=7)
@@ -400,7 +429,7 @@ class CivicConnectApp(tk.Tk):
             label(i,f"Government: {a['government_name']}   NGO: {a['ngo_name']}   Budget: ${a['budget']:,.2f}",9,T.muted,T.panel).pack(anchor="w")
             row=tk.Frame(i,bg=T.panel); row.pack(fill="x",pady=6)
             tag(row,a["status"].upper(),T.gold if a["status"] in ("pending","changes_requested") else T.success if a["status"]=="approved" else T.danger if a["status"]=="rejected" else T.muted).pack(side="left")
-            button(row,"OPEN",lambda aid=a["id"]: self.show_agreement_detail(aid),"outline",pady=4).pack(side="right")
+            button(row,"OPEN",lambda aid=a["id"]: self.show_agreement_detail(aid),"outline",pady=4,icon="file-check-2").pack(side="right")
         if not agreements: label(body,"No agreements match the current view.",10,T.muted,T.bg).pack(anchor="w")
 
     def new_agreement_modal(self,partner_id):
@@ -412,7 +441,7 @@ class CivicConnectApp(tk.Tk):
             try:
                 self.backend.create_agreement(self.current_user["id"],partner_id,get_entry(title),self.text_value(summary,"Agreement summary and terms..."),float(get_entry(budget) or 0)); m.destroy(); self.show_agreements()
             except Exception as exc: error(exc)
-        button(m.body,"CREATE & SUBMIT",save,"primary").pack(fill="x",pady=10)
+        button(m.body,"CREATE & SUBMIT",save,"primary",icon="check").pack(fill="x",pady=10)
 
     def show_agreement_detail(self,aid):
         body=self.shell("Agreements"); uid=self.current_user["id"]; a=self.backend.agreement(aid,uid)
@@ -423,22 +452,22 @@ class CivicConnectApp(tk.Tk):
         label(i,f"Government: {a['government_name']} | NGO: {a['ngo_name']} | Budget: ${a['budget']:,.2f} | Status: {a['status'].upper()}",10,T.muted,T.panel).pack(anchor="w")
         actions=tk.Frame(i,bg=T.panel); actions.pack(fill="x",pady=12)
         if self.current_user["role"]=="government" and a["status"] in ("pending","changes_requested"):
-            button(actions,"APPROVE",lambda:self.status_agreement(aid,"approved"),"primary").pack(side="left",padx=4)
-            button(actions,"REQUEST CHANGES",lambda:self.status_agreement(aid,"changes_requested"),"outline").pack(side="left",padx=4)
-            button(actions,"REJECT",lambda:self.status_agreement(aid,"rejected"),"danger").pack(side="left",padx=4)
+            button(actions,"APPROVE",lambda:self.status_agreement(aid,"approved"),"primary",icon="check").pack(side="left",padx=4)
+            button(actions,"REQUEST CHANGES",lambda:self.status_agreement(aid,"changes_requested"),"outline",icon="x").pack(side="left",padx=4)
+            button(actions,"REJECT",lambda:self.status_agreement(aid,"rejected"),"danger",icon="x").pack(side="left",padx=4)
         if a["status"]=="changes_requested":
-            button(actions,"RESUBMIT",lambda:self.status_agreement(aid,"pending"),"primary").pack(side="left",padx=4)
+            button(actions,"RESUBMIT",lambda:self.status_agreement(aid,"pending"),"primary",icon="upload").pack(side="left",padx=4)
         if a["status"]=="approved":
-            button(actions,"MARK ACTIVE",lambda:self.status_agreement(aid,"active"),"success").pack(side="left",padx=4)
+            button(actions,"MARK ACTIVE",lambda:self.status_agreement(aid,"active"),"success",icon="check").pack(side="left",padx=4)
         if a["status"]=="active":
-            button(actions,"MARK COMPLETED",lambda:self.status_agreement(aid,"completed"),"success").pack(side="left",padx=4)
-        button(actions,"UPLOAD DOCUMENT",lambda:self.upload_doc(aid),"outline").pack(side="right")
+            button(actions,"MARK COMPLETED",lambda:self.status_agreement(aid,"completed"),"success",icon="check").pack(side="left",padx=4)
+        button(actions,"UPLOAD DOCUMENT",lambda:self.upload_doc(aid),"outline",icon="upload").pack(side="right")
         docs,di=card(body); docs.pack(side="left",fill="both",expand=True,padx=(0,6),pady=8)
         label(di,"Documents",13,T.gold,T.panel,"bold").pack(anchor="w")
-        for d in self.backend.documents_for_agreement(aid,uid): label(di,f"📄 {d['name']} — {d['uploader']} — {d['created_at']}",9,T.muted,T.panel).pack(anchor="w",pady=4)
+        for d in self.backend.documents_for_agreement(aid,uid): label(di,f"Document: {d['name']} - {d['uploader']} - {d['created_at']}",9,T.muted,T.panel).pack(anchor="w",pady=4)
         ev,ei=card(body); ev.pack(side="left",fill="both",expand=True,padx=(6,0),pady=8)
         label(ei,"Activity Log",13,T.gold,T.panel,"bold").pack(anchor="w")
-        for e in self.backend.agreement_events(aid,uid): label(ei,f"{e['event_type'].upper()} by {e['full_name']} — {e['note']}",9,T.muted,T.panel,wrap=420).pack(anchor="w",pady=4)
+        for e in self.backend.agreement_events(aid,uid): label(ei,f"{e['event_type'].upper()} by {e['full_name']} - {e['note']}",9,T.muted,T.panel,wrap=420).pack(anchor="w",pady=4)
 
     def status_agreement(self,aid,status):
         try: self.backend.update_agreement_status(aid,self.current_user["id"],status,f"{self.current_user['full_name']} marked agreement as {status}."); self.show_agreement_detail(aid)
@@ -465,21 +494,22 @@ class CivicConnectApp(tk.Tk):
         cb=ttk.Combobox(top,textvariable=status,values=["all","planning","active","paused","blocked","completed"],width=16,state="readonly"); cb.pack(side="left",padx=6)
         def apply_filters():
             self.project_search=get_entry(search); self.project_status_filter=status.get(); self.show_projects()
-        button(top,"FILTER",apply_filters,"outline",width=10,pady=4).pack(side="left")
+        button(top,"FILTER",apply_filters,"outline",width=10,pady=4,icon="search").pack(side="left")
         if self.project_search or self.project_status_filter!="all":
-            button(top,"CLEAR",lambda:(setattr(self,"project_search",""),setattr(self,"project_status_filter","all"),self.show_projects()),"ghost",width=8,pady=4).pack(side="left",padx=6)
-        button(body,"NEW PROJECT",self.new_project_modal,"primary",width=16).pack(anchor="e")
+            button(top,"CLEAR",lambda:(setattr(self,"project_search",""),setattr(self,"project_status_filter","all"),self.show_projects()),"ghost",width=8,pady=4,icon="x").pack(side="left",padx=6)
+        button(body,"NEW PROJECT",self.new_project_modal,"primary",width=16,icon="folder-kanban").pack(anchor="e")
         projects=self.backend.projects_for(uid,self.project_search,self.project_status_filter)
         for p in projects:
             o,i=card(body); o.pack(fill="x",pady=7)
             label(i,p["title"],13,T.text,T.panel,"bold").pack(anchor="w")
             label(i,f"Focus: {p['focus_area']} | Status: {p['status']} | Progress: {p['progress']}% | Partner: {p.get('partner_name') or 'None'}",9,T.muted,T.panel).pack(anchor="w")
-            row=tk.Frame(i,bg=T.panel); row.pack(fill="x",pady=6)
-            progress=entry(row,"Progress 0-100"); progress.pack(side="left",ipady=6)
-            project_status=entry(row,"Status: planning, active, paused, blocked, completed"); project_status.pack(side="left",ipady=6,padx=6)
-            button(row,"UPDATE",lambda pid=p["id"],current=p["progress"],current_status=p["status"],pe=progress,se=project_status:self.update_project(pid,current,current_status,pe,se),"outline",pady=4).pack(side="left")
-            button(row,"UPLOAD DOC",lambda pid=p["id"]:self.upload_project_doc(pid),"outline",pady=4).pack(side="right",padx=4)
-            button(row,"REPORT",lambda pid=p["id"]:self.report_modal(pid),"primary",pady=4).pack(side="right")
+            inputs=tk.Frame(i,bg=T.panel); inputs.pack(fill="x",pady=(8,4))
+            progress=entry(inputs,"Progress 0-100"); progress.pack(side="left",fill="x",expand=True,ipady=6)
+            project_status=entry(inputs,"Status: planning, active, paused, blocked, completed"); project_status.pack(side="left",fill="x",expand=True,ipady=6,padx=6)
+            actions=tk.Frame(i,bg=T.panel); actions.pack(fill="x",pady=(0,4))
+            button(actions,"UPDATE",lambda pid=p["id"],current=p["progress"],current_status=p["status"],pe=progress,se=project_status:self.update_project(pid,current,current_status,pe,se),"outline",pady=4,icon="check").pack(side="left")
+            button(actions,"UPLOAD DOC",lambda pid=p["id"]:self.upload_project_doc(pid),"outline",pady=4,icon="upload").pack(side="right",padx=4)
+            button(actions,"REPORT",lambda pid=p["id"]:self.report_modal(pid),"primary",pady=4,icon="bar-chart-3").pack(side="right")
             docs=self.backend.documents_for_project(p["id"],uid)
             for d in docs[:4]:
                 label(i,f"Document: {d['name']} - {d['uploader']} - {d['created_at']}",9,T.muted,T.panel).pack(anchor="w",pady=2)
@@ -498,7 +528,7 @@ class CivicConnectApp(tk.Tk):
                 pid=int(partner_var.get().split("|")[0]) if partner_var.get() else None
                 self.backend.create_project(self.current_user["id"],get_entry(title),pid,get_entry(focus)); m.destroy(); self.show_projects()
             except Exception as exc: error(exc)
-        button(m.body,"CREATE PROJECT",save,"primary").pack(fill="x",pady=12)
+        button(m.body,"CREATE PROJECT",save,"primary",icon="check").pack(fill="x",pady=12)
     def update_project(self,pid,current,current_status,pe,se):
         try: self.backend.update_project_progress(pid,self.current_user["id"],int(get_entry(pe) or current),get_entry(se) or current_status); self.show_projects()
         except Exception as exc: error(exc)
@@ -509,7 +539,7 @@ class CivicConnectApp(tk.Tk):
         def save():
             try: self.backend.create_report(self.current_user["id"],pid,get_entry(title),body.get("1.0","end").strip()); m.destroy(); self.show_reports()
             except Exception as exc: error(exc)
-        button(m.body,"SUBMIT REPORT",save,"primary").pack(fill="x",pady=10)
+        button(m.body,"SUBMIT REPORT",save,"primary",icon="check").pack(fill="x",pady=10)
 
     def show_reports(self):
         body=self.shell("Reports"); label(body,"Reports",22,T.text,T.bg,"bold").pack(anchor="w")
@@ -517,9 +547,9 @@ class CivicConnectApp(tk.Tk):
         search=entry(search_row,"Search reports"); self.set_entry_value(search,self.report_search); search.pack(side="left",fill="x",expand=True,ipady=7)
         def apply_search():
             self.report_search=get_entry(search); self.show_reports()
-        button(search_row,"SEARCH",apply_search,"outline",width=10,pady=4).pack(side="left",padx=6)
+        button(search_row,"SEARCH",apply_search,"outline",width=10,pady=4,icon="search").pack(side="left",padx=6)
         if self.report_search:
-            button(search_row,"CLEAR",lambda:(setattr(self,"report_search",""),self.show_reports()),"ghost",width=8,pady=4).pack(side="left")
+            button(search_row,"CLEAR",lambda:(setattr(self,"report_search",""),self.show_reports()),"ghost",width=8,pady=4,icon="x").pack(side="left")
         reports=self.backend.reports_for(self.current_user["id"],self.report_search)
         for r in reports:
             o,i=card(body); o.pack(fill="x",pady=7)
@@ -532,9 +562,9 @@ class CivicConnectApp(tk.Tk):
     def show_notifications(self):
         active="Notifications"; body=self.shell(active); uid=self.current_user["id"]
         label(body,"Notifications",22,T.text,T.bg,"bold").pack(anchor="w")
-        button(body,"MARK ALL READ",lambda:(self.backend.mark_notifications_read(uid),self.show_notifications()),"outline",width=16).pack(anchor="e")
+        button(body,"MARK ALL READ",lambda:(self.backend.mark_notifications_read(uid),self.show_notifications()),"outline",width=16,icon="check").pack(anchor="e")
         for n in self.backend.notifications(uid):
             o,i=card(body); o.pack(fill="x",pady=5)
-            label(i,("● " if not n["is_read"] else "")+n["title"],12,T.gold if not n["is_read"] else T.text,T.panel,"bold").pack(anchor="w")
+            label(i,("Unread: " if not n["is_read"] else "")+n["title"],12,T.gold if not n["is_read"] else T.text,T.panel,"bold").pack(anchor="w")
             label(i,n["body"],10,T.muted,T.panel,wrap=850).pack(anchor="w")
             label(i,n["created_at"],8,T.faint,T.panel).pack(anchor="e")

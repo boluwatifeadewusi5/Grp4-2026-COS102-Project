@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, Optional
 from .theme import T, FONT
-from .icons import get_icon, icon_for_text
+from .icons import get_icon
 
 
 def clear(widget: tk.Widget):
@@ -23,13 +23,30 @@ def button(parent, text, command: Optional[Callable] = None, variant="primary", 
         "success": (T.panel, T.success, T.success),
     }
     bg, fg, border = colors.get(variant, colors["ghost"])
-    icon_name = icon or icon_for_text(text)
     tone = "dark" if variant == "primary" else "gold"
-    icon_image = get_icon(icon_name, tone=tone) if icon_name else None
-    btn = tk.Button(parent, text=text, command=command, bg=bg, fg=fg, activebackground=T.panel2, activeforeground=fg,
-                    relief="flat", bd=0, highlightthickness=1, highlightbackground=border, padx=12, pady=pady,
-                    width=width, font=(FONT, 9, "bold"), cursor="hand2", compound="left",
-                    image=icon_image)
+    icon_image = get_icon(icon, tone=tone) if icon else None
+    options = {
+        "text": f" {text}" if icon_image else text,
+        "command": command,
+        "bg": bg,
+        "fg": fg,
+        "activebackground": T.panel2,
+        "activeforeground": fg,
+        "relief": "flat",
+        "bd": 0,
+        "highlightthickness": 1,
+        "highlightbackground": border,
+        "padx": 12,
+        "pady": pady,
+        "font": (FONT, 9, "bold"),
+        "cursor": "hand2",
+    }
+    if icon_image:
+        options["image"] = icon_image
+        options["compound"] = "left"
+    elif width is not None:
+        options["width"] = width
+    btn = tk.Button(parent, **options)
     btn._icon_image = icon_image
     return btn
 

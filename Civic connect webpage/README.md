@@ -1,19 +1,13 @@
-# Civic Connect Website
+# Civic Connect webpage (working copy)
 
-This folder is ready for GitHub Pages.
+Edit files here during development, then copy changes into **`docs/`** before pushing — GitHub Pages only publishes **`/docs`**.
 
-Recommended setup:
+Quick sync from repo root (PowerShell):
 
-1. Push the project to GitHub.
-2. Go to repository `Settings > Pages`.
-3. Set source to `Deploy from a branch`.
-4. Choose branch `main` and folder `/docs`.
-5. Save.
-
-Before publishing, edit the download link in `index.html`:
-
-```html
-https://github.com/YOUR_USERNAME/YOUR_REPOSITORY/releases/latest/download/CivicConnect.exe
+```powershell
+Copy-Item "Civic connect webpage\index.html" "docs\index.html" -Force
+Copy-Item "Civic connect webpage\styles.css" "docs\styles.css" -Force
+Copy-Item "Civic connect webpage\test.txt" "docs\test.txt" -Force
 ```
 
-Replace `YOUR_USERNAME/YOUR_REPOSITORY` with your real GitHub repository path.
+Deployment instructions: [../docs/README.md](../docs/README.md)

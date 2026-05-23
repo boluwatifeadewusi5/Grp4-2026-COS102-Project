@@ -79,6 +79,9 @@ class CivicBackend:
         row = self.db.one(sql, params)
         return int(row["c"] if row else 0)
 
+    def _like(self, value: str) -> str:
+        return f"%{value.strip()}%"
+
     def update_profile(self, user_id: int, full_name: str, phone: str, location: str, bio: str):
         if not full_name.strip():
             raise BackendError("Full name is required.")
@@ -119,8 +122,8 @@ class CivicBackend:
         params = [viewer_id]
         where = "WHERE u.role='casual'"
         if search.strip():
-            like = f"%{search.strip()}%"
-            where += " AND (p.body LIKE ? OR p.topic LIKE ? OR u.full_name LIKE ?)"
+            like = self._like(search)
+            where += " AND (p.body ILIKE ? OR p.topic ILIKE ? OR u.full_name ILIKE ?)"
             params.extend([like, like, like])
         posts = self.db.query(
             f"""
@@ -131,11 +134,35 @@ class CivicBackend:
             FROM posts p JOIN users u ON u.id=p.author_id
             {where}
             ORDER BY p.created_at DESC, p.id DESC
-            LIMIT 80
+            LIMIT 40
             """,
             params,
         )
         return posts
+
+    def recent_comments_for_posts(self, post_ids: List[int], per_post: int = 3) -> Dict[int, List[Dict]]:
+        if not post_ids:
+            return {}
+        placeholders = ",".join(["?"] * len(post_ids))
+        rows = self.db.query(
+            f"""
+            SELECT post_id, id, author_id, body, created_at, full_name
+            FROM (
+                SELECT c.*, u.full_name,
+                       ROW_NUMBER() OVER (PARTITION BY c.post_id ORDER BY c.created_at DESC, c.id DESC) AS rn
+                FROM comments c
+                JOIN users u ON u.id=c.author_id
+                WHERE c.post_id IN ({placeholders})
+            ) ranked
+            WHERE rn <= ?
+            ORDER BY post_id, created_at ASC, id ASC
+            """,
+            (*post_ids, per_post),
+        )
+        grouped: Dict[int, List[Dict]] = {}
+        for row in rows:
+            grouped.setdefault(row["post_id"], []).append(row)
+        return grouped
 
     def toggle_like(self, user_id: int, post_id: int) -> bool:
         self.require_casual(user_id)
@@ -213,17 +240,24 @@ class CivicBackend:
         params = [user_id, user_id, user_id]
         search_filter = ""
         if search.strip():
-            like = f"%{search.strip()}%"
-            search_filter = " AND (full_name LIKE ? OR email LIKE ? OR location LIKE ?)"
+            like = self._like(search)
+            search_filter = " AND (u.full_name ILIKE ? OR u.email ILIKE ? OR u.location ILIKE ?)"
             params.extend([like, like, like])
         return self.db.query(
             f"""
-            SELECT id, full_name, email, location, bio FROM users
-            WHERE role='casual' AND id<>?
-              AND id NOT IN (SELECT requester_id FROM friendships WHERE receiver_id=? AND status IN ('pending','accepted'))
-              AND id NOT IN (SELECT receiver_id FROM friendships WHERE requester_id=? AND status IN ('pending','accepted'))
+            SELECT u.id, u.full_name, u.email, u.location, u.bio
+            FROM users u
+            WHERE u.role='casual' AND u.id<>?
+              AND NOT EXISTS (
+                  SELECT 1 FROM friendships f
+                  WHERE f.receiver_id=? AND f.requester_id=u.id AND f.status IN ('pending','accepted')
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM friendships f
+                  WHERE f.requester_id=? AND f.receiver_id=u.id AND f.status IN ('pending','accepted')
+              )
               {search_filter}
-            ORDER BY full_name LIMIT 20
+            ORDER BY u.full_name LIMIT 20
             """, params)
 
     # ---------- conversations ----------
@@ -276,7 +310,21 @@ class CivicBackend:
         conv = self.db.one("SELECT * FROM conversations WHERE id=? AND (user_a=? OR user_b=?)", (conversation_id, user_id, user_id))
         if not conv:
             raise PermissionError("Conversation not available.")
-        return self.db.query("SELECT m.*, u.full_name FROM messages m JOIN users u ON u.id=m.sender_id WHERE conversation_id=? ORDER BY m.created_at ASC, m.id ASC", (conversation_id,))
+        return self.db.query(
+            """
+            SELECT *
+            FROM (
+                SELECT m.*, u.full_name
+                FROM messages m
+                JOIN users u ON u.id=m.sender_id
+                WHERE conversation_id=?
+                ORDER BY m.created_at DESC, m.id DESC
+                LIMIT ?
+            ) recent
+            ORDER BY created_at ASC, id ASC
+            """,
+            (conversation_id, 120),
+        )
 
     # ---------- government / ngo partnerships ----------
     def require_org(self, user_id: int):
@@ -321,20 +369,41 @@ class CivicBackend:
         if accept:
             self.get_or_create_conversation(pr["requester_id"], pr["receiver_id"])
 
-    def partners_and_requests(self, user_id: int) -> Dict[str, List[Dict]]:
+    def partners_and_requests(self, user_id: int, search: str = "") -> Dict[str, List[Dict]]:
         self.require_org(user_id)
+        search = search.strip()
+        like = self._like(search) if search else ""
+        search_clause = ""
+        if search:
+            search_clause = " AND (u.full_name ILIKE ? OR u.organization_name ILIKE ? OR u.location ILIKE ? OR u.bio ILIKE ? OR u.email ILIKE ?)"
+        search_params = [like, like, like, like, like] if search else []
         partners = self.db.query(
-            """
+            f"""
             SELECT p.*, u.id AS other_id, u.full_name, u.role, u.organization_name, u.location, u.bio
             FROM partner_requests p
             JOIN users u ON u.id = CASE WHEN p.requester_id=? THEN p.receiver_id ELSE p.requester_id END
             WHERE (p.requester_id=? OR p.receiver_id=?) AND p.status='accepted'
+            {search_clause}
             ORDER BY u.full_name
-            """, (user_id, user_id, user_id))
+            """, (user_id, user_id, user_id, *search_params))
         incoming = self.db.query(
-            "SELECT p.*, u.full_name, u.role, u.organization_name FROM partner_requests p JOIN users u ON u.id=p.requester_id WHERE p.receiver_id=? AND p.status='pending' ORDER BY p.created_at DESC", (user_id,))
+            f"""
+            SELECT p.*, u.full_name, u.role, u.organization_name
+            FROM partner_requests p
+            JOIN users u ON u.id=p.requester_id
+            WHERE p.receiver_id=? AND p.status='pending'
+            {search_clause}
+            ORDER BY p.created_at DESC
+            """, (user_id, *search_params))
         outgoing = self.db.query(
-            "SELECT p.*, u.full_name, u.role, u.organization_name FROM partner_requests p JOIN users u ON u.id=p.receiver_id WHERE p.requester_id=? AND p.status='pending' ORDER BY p.created_at DESC", (user_id,))
+            f"""
+            SELECT p.*, u.full_name, u.role, u.organization_name
+            FROM partner_requests p
+            JOIN users u ON u.id=p.receiver_id
+            WHERE p.requester_id=? AND p.status='pending'
+            {search_clause}
+            ORDER BY p.created_at DESC
+            """, (user_id, *search_params))
         return {"partners": partners, "incoming": incoming, "outgoing": outgoing}
 
     def discover_orgs(self, user_id: int, search: str = "") -> List[Dict]:
@@ -348,16 +417,24 @@ class CivicBackend:
         params = [role, user_id, user_id]
         search_filter = ""
         if search.strip():
-            like = f"%{search.strip()}%"
-            search_filter = " AND (full_name LIKE ? OR organization_name LIKE ? OR location LIKE ? OR bio LIKE ?)"
-            params.extend([like, like, like, like])
+            like = self._like(search)
+            search_filter = " AND (u.full_name ILIKE ? OR u.organization_name ILIKE ? OR u.location ILIKE ? OR u.bio ILIKE ? OR u.email ILIKE ?)"
+            params.extend([like, like, like, like, like])
         return self.db.query(
             f"""
-            SELECT id,full_name,email,role,organization_name,location,bio,verified FROM users
-            WHERE role=? AND id NOT IN (SELECT requester_id FROM partner_requests WHERE receiver_id=? AND status IN ('pending','accepted'))
-                         AND id NOT IN (SELECT receiver_id FROM partner_requests WHERE requester_id=? AND status IN ('pending','accepted'))
-                         {search_filter}
-            ORDER BY full_name LIMIT 30
+            SELECT u.id,u.full_name,u.email,u.role,u.organization_name,u.location,u.bio,u.verified
+            FROM users u
+            WHERE u.role=?
+              AND NOT EXISTS (
+                  SELECT 1 FROM partner_requests p
+                  WHERE p.receiver_id=? AND p.requester_id=u.id AND p.status IN ('pending','accepted')
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM partner_requests p
+                  WHERE p.requester_id=? AND p.receiver_id=u.id AND p.status IN ('pending','accepted')
+              )
+              {search_filter}
+            ORDER BY u.full_name LIMIT 30
             """, params)
 
     # ---------- agreements ----------
@@ -381,8 +458,8 @@ class CivicBackend:
             filters.append("a.status=?")
             params.append(status.strip())
         if search.strip():
-            like = f"%{search.strip()}%"
-            filters.append("(a.title LIKE ? OR a.summary LIKE ? OR g.full_name LIKE ? OR n.full_name LIKE ? OR g.organization_name LIKE ? OR n.organization_name LIKE ?)")
+            like = self._like(search)
+            filters.append("(a.title ILIKE ? OR a.summary ILIKE ? OR g.full_name ILIKE ? OR n.full_name ILIKE ? OR g.organization_name ILIKE ? OR n.organization_name ILIKE ?)")
             params.extend([like, like, like, like, like, like])
         where = " AND ".join(filters)
         return self.db.query(
@@ -486,8 +563,8 @@ class CivicBackend:
             filters.append("p.status=?")
             params.append(status.strip())
         if search.strip():
-            like = f"%{search.strip()}%"
-            filters.append("(p.title LIKE ? OR p.focus_area LIKE ? OR p.status LIKE ? OR u.full_name LIKE ?)")
+            like = self._like(search)
+            filters.append("(p.title ILIKE ? OR p.focus_area ILIKE ? OR p.status ILIKE ? OR u.full_name ILIKE ?)")
             params.extend([like, like, like, like])
         where = " AND ".join(filters)
         return self.db.query(f"SELECT p.*, u.full_name AS partner_name FROM projects p LEFT JOIN users u ON u.id=p.partner_id WHERE {where} ORDER BY p.created_at DESC", params)
@@ -517,8 +594,8 @@ class CivicBackend:
         params = [user_id, user_id]
         search_filter = ""
         if search.strip():
-            like = f"%{search.strip()}%"
-            search_filter = " AND (r.title LIKE ? OR r.body LIKE ? OR p.title LIKE ? OR u.full_name LIKE ?)"
+            like = self._like(search)
+            search_filter = " AND (r.title ILIKE ? OR r.body ILIKE ? OR p.title ILIKE ? OR u.full_name ILIKE ?)"
             params.extend([like, like, like, like])
         return self.db.query(f"SELECT r.*, p.title AS project_title, u.full_name AS author FROM reports r JOIN projects p ON p.id=r.project_id JOIN users u ON u.id=r.author_id WHERE (p.owner_id=? OR p.partner_id=?) {search_filter} ORDER BY r.created_at DESC", params)
 

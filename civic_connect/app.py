@@ -1,4 +1,6 @@
+import gc
 import os
+import time
 import tkinter as tk
 from tkinter import ttk, filedialog
 from pathlib import Path
@@ -7,14 +9,18 @@ from .backend import CivicBackend, BackendError, AuthError, PermissionError
 from .theme import T, FONT
 from .ui import clear, label, icon_label, button, entry, get_entry, text_box, card, tag, Scroll, Modal, toast, error
 
+APP_NAME = "Civic Connect"
+APP_VERSION = "Beta 1.2"
+
 class CivicConnectApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Beta 1.0 - Civic Connect")
-        self.geometry("1320x850")
-        self.minsize(1120, 720)
+        self.title(f"{APP_NAME} - {APP_VERSION}")
+        self.geometry("1200x780")
+        self.minsize(920, 620)
         self.configure(bg=T.bg)
         self.protocol("WM_DELETE_WINDOW", self.on_close)
+        gc.set_threshold(900, 15, 15)
         self.backend = CivicBackend()
         self.current_user: Optional[Dict] = None
         self.selected_conversation_id: Optional[int] = None
@@ -33,19 +39,42 @@ class CivicConnectApp(tk.Tk):
         self.refresh_seconds = self.refresh_interval()
         self.refreshing = False
         self.last_refresh_error = ""
+        self.last_interaction_at = time.monotonic()
+        self.refresh_quiet_seconds = 2.0
+        self._reset_count = 0
         self.root = tk.Frame(self, bg=T.bg)
         self.root.pack(fill="both", expand=True)
+        for sequence in ("<Button>", "<KeyPress>"):
+            self.bind_all(sequence, self.mark_user_activity, add="+")
         self.show_landing()
         self.schedule_refresh()
 
     # ---------- core layout ----------
     def reset(self):
         clear(self.root)
+        self._reset_count += 1
+        if self._reset_count >= 5:
+            self._reset_count = 0
+            self.after_idle(self.collect_garbage)
+
+    def collect_garbage(self):
+        try:
+            gc.collect()
+        except Exception:
+            pass
+
+    def mark_user_activity(self, _event=None):
+        self.last_interaction_at = time.monotonic()
 
     def on_close(self):
         if self.refresh_job:
             try:
                 self.after_cancel(self.refresh_job)
+            except tk.TclError:
+                pass
+        for sequence in ("<Button>", "<KeyPress>"):
+            try:
+                self.unbind_all(sequence)
             except tk.TclError:
                 pass
         try:
@@ -99,6 +128,8 @@ class CivicConnectApp(tk.Tk):
     def should_skip_refresh(self) -> bool:
         if not self.current_user or not self.active_view:
             return True
+        if time.monotonic() - self.last_interaction_at < self.refresh_quiet_seconds:
+            return True
         focused = self.focus_get()
         if focused and focused.winfo_class() in {"Entry", "Text", "TCombobox"}:
             return True
@@ -119,7 +150,7 @@ class CivicConnectApp(tk.Tk):
     def nav(self, public=True):
         n = tk.Frame(self.root, bg=T.bg, height=58)
         n.pack(fill="x"); n.pack_propagate(False)
-        label(n, "BETA 1.0", 16, T.gold, T.bg, "bold").pack(side="left", padx=26)
+        label(n, APP_NAME, 16, T.gold, T.bg, "bold").pack(side="left", padx=26)
         if public:
             for txt, cmd in [("HOME", self.show_landing), ("COMMUNITY", self.show_landing), ("RESOURCES", self.show_landing)]:
                 button(n, txt, cmd, "ghost", pady=5, icon=self.icon_for_nav(txt)).pack(side="left", padx=4)
@@ -129,6 +160,7 @@ class CivicConnectApp(tk.Tk):
             unread = self.backend.unread_count(self.current_user["id"])
             label(n, f"Alerts: {unread} | {self.current_user['full_name']} ({self.current_user['role'].title()})", 10, T.text, T.bg, "bold").pack(side="right", padx=26)
             button(n, "LOG OUT", self.logout, "outline", width=10, pady=6, icon="log-out").pack(side="right", padx=4)
+            button(n, "WORKSPACE", self.route_home, "ghost", width=12, pady=6, icon="layout-dashboard").pack(side="right", padx=4)
 
     def icon_for_nav(self, name: str) -> str:
         return {
@@ -163,23 +195,35 @@ class CivicConnectApp(tk.Tk):
     # ---------- public ----------
     def show_landing(self):
         self.set_active_view(None)
-        self.reset(); self.nav(public=True)
+        public = self.current_user is None
+        self.reset(); self.nav(public=public)
         s = Scroll(self.root); s.pack(fill="both", expand=True)
-        main = tk.Frame(s.content, bg=T.bg, padx=54, pady=42); main.pack(fill="both", expand=True)
+        compact = 1 < self.winfo_width() < 1050
+        main = tk.Frame(s.content, bg=T.bg, padx=34 if compact else 54, pady=32 if compact else 42); main.pack(fill="both", expand=True)
         hero = tk.Frame(main, bg=T.bg); hero.pack(fill="x")
-        left = tk.Frame(hero, bg=T.bg); left.pack(side="left", fill="both", expand=True)
-        right = tk.Frame(hero, bg=T.bg); right.pack(side="right", fill="both", expand=True)
+        left = tk.Frame(hero, bg=T.bg)
+        right = tk.Frame(hero, bg=T.bg)
+        if compact:
+            left.pack(fill="x", expand=True)
+            right.pack(fill="x", expand=True, pady=(20, 0))
+        else:
+            left.pack(side="left", fill="both", expand=True)
+            right.pack(side="right", fill="both", expand=True)
         label(left, "A PLATFORM FOR POSITIVE CHANGE", 10, T.gold, T.bg, "bold").pack(anchor="w")
         label(left, "CONNECT. COLLABORATE.", 31, T.text, T.bg, "bold").pack(anchor="w", pady=(16,0))
         label(left, "CREATE IMPACT.", 34, T.gold, T.bg, "bold").pack(anchor="w")
         label(left, "Government Agencies and NGOs connect, message, approve agreements, manage projects and reports.\nCasual Users have a separate social space with posts, comments, likes, friends, and private messages.", 12, T.muted, T.bg, wrap=600).pack(anchor="w", pady=18)
         row = tk.Frame(left, bg=T.bg); row.pack(anchor="w")
-        button(row, "GET STARTED", self.show_signup, "primary", width=18, icon="user-plus").pack(side="left", padx=(0,10))
-        button(row, "LOG IN", self.show_login, "outline", width=14, icon="log-in").pack(side="left")
+        if public:
+            button(row, "GET STARTED", self.show_signup, "primary", width=18, icon="user-plus").pack(side="left", padx=(0,10))
+            button(row, "LOG IN", self.show_login, "outline", width=14, icon="log-in").pack(side="left")
+        else:
+            button(row, "OPEN WORKSPACE", self.route_home, "primary", width=18, icon="layout-dashboard").pack(side="left", padx=(0,10))
+            button(row, "PROFILE", self.show_profile, "outline", width=14, icon="settings").pack(side="left")
         visual = tk.Frame(right, bg=T.bg); visual.pack(anchor="center", fill="x", padx=(26, 0))
         hub_o, hub = card(visual, padx=20, pady=18); hub_o.pack(fill="x", padx=36, pady=(0, 10))
         icon_label(hub, "network", "gold", 42, T.panel).pack(anchor="center")
-        label(hub, "BETA 1.0", 18, T.gold, T.panel, "bold", anchor="center").pack(fill="x", pady=(8, 2))
+        label(hub, APP_NAME, 18, T.gold, T.panel, "bold", anchor="center").pack(fill="x", pady=(8, 2))
         label(hub, "Role-aware collaboration, approvals, projects, reports, and messages.", 10, T.muted, T.panel, wrap=360, anchor="center", justify="center").pack(fill="x")
         flow = tk.Frame(visual, bg=T.bg); flow.pack(fill="x")
         for idx, (title, icon, color) in enumerate([
@@ -239,6 +283,9 @@ class CivicConnectApp(tk.Tk):
         return o
 
     def show_login(self):
+        if self.current_user:
+            self.route_home()
+            return
         self.set_active_view(None)
         self.reset(); self.nav(public=True)
         main=tk.Frame(self.root,bg=T.bg,padx=40,pady=40); main.pack(fill="both",expand=True)
@@ -256,6 +303,9 @@ class CivicConnectApp(tk.Tk):
         label(bottom,"No account? ",9,T.muted,T.panel).pack(side="left"); button(bottom,"Sign up",self.show_signup,"ghost",pady=2).pack(side="left")
 
     def show_signup(self):
+        if self.current_user:
+            self.route_home()
+            return
         self.set_active_view(None)
         self.reset(); self.nav(public=True)
         s=Scroll(self.root); s.pack(fill="both",expand=True)
@@ -282,7 +332,8 @@ class CivicConnectApp(tk.Tk):
     def shell(self, active:str):
         self.reset(); self.nav(public=False)
         layout=tk.Frame(self.root,bg=T.bg); layout.pack(fill="both",expand=True)
-        side=tk.Frame(layout,bg=T.bg2,width=250,padx=16,pady=20); side.pack(side="left",fill="y"); side.pack_propagate(False)
+        side_width = 220 if self.winfo_width() < 1100 else 250
+        side=tk.Frame(layout,bg=T.bg2,width=side_width,padx=14,pady=18); side.pack(side="left",fill="y"); side.pack_propagate(False)
         label(side,self.current_user["full_name"],12,T.gold,T.bg2,"bold",wrap=210).pack(anchor="w")
         label(side,self.current_user["role"].upper(),9,T.muted,T.bg2,"bold").pack(anchor="w",pady=(0,14))
         if self.current_user["role"]=="casual":
@@ -291,7 +342,7 @@ class CivicConnectApp(tk.Tk):
             items=[("Dashboard",self.show_org_home),("Partners",self.show_partners),("Messages",self.show_org_messages),("Agreements",self.show_agreements),("Projects",self.show_projects),("Reports",self.show_reports),("Notifications",self.show_notifications)]
         for name,cmd in items:
             button(side,name,cmd,"primary" if name==active else "ghost",pady=9,icon=self.icon_for_nav(name)).pack(fill="x",pady=3)
-        button(side,"Landing Page",self.show_landing,"outline",pady=7,icon="home").pack(side="bottom",fill="x")
+        button(side,"About Civic Connect",self.show_landing,"outline",pady=7,icon="home").pack(side="bottom",fill="x")
         content=Scroll(layout,T.bg); content.pack(side="left",fill="both",expand=True)
         body=tk.Frame(content.content,bg=T.bg,padx=26,pady=22); body.pack(fill="both",expand=True)
         return body
@@ -320,10 +371,12 @@ class CivicConnectApp(tk.Tk):
             try: self.backend.create_post(uid,self.text_value(new,"What's on your mind?"),get_entry(topic) or "General"); self.show_casual_home()
             except Exception as exc: error(exc)
         button(comp,"POST",post,"primary",width=12,icon="plus").pack(anchor="e")
-        for p in self.backend.feed(uid,self.feed_search):
-            self.post_widget(body,p)
+        posts = self.backend.feed(uid,self.feed_search)
+        comments = self.backend.recent_comments_for_posts([p["id"] for p in posts])
+        for p in posts:
+            self.post_widget(body,p,comments.get(p["id"], []))
 
-    def post_widget(self,parent,p):
+    def post_widget(self,parent,p,comments):
         o,i=card(parent); o.pack(fill="x",pady=8)
         label(i,f"{p['full_name']} | {p['topic']} | {p['created_at']}",10,T.gold,T.panel,"bold").pack(anchor="w")
         label(i,p["body"],11,T.text,T.panel,wrap=850).pack(anchor="w",pady=8)
@@ -339,7 +392,7 @@ class CivicConnectApp(tk.Tk):
             try: self.backend.add_comment(self.current_user["id"],p["id"],get_entry(ce)); self.show_casual_home()
             except Exception as exc: error(exc)
         button(acts,"COMMENT",comment,"primary",pady=4,icon="message-square").pack(side="left")
-        for c in self.backend.comments_for_post(p["id"])[-3:]:
+        for c in comments:
             label(i,f"   {c['full_name']}: {c['body']}",9,T.muted,T.panel,wrap=800).pack(anchor="w",pady=2)
 
     def show_friends(self):
@@ -442,7 +495,7 @@ class CivicConnectApp(tk.Tk):
         button(search_row,"SEARCH",apply_search,"outline",width=10,pady=4,icon="search").pack(side="left",padx=6)
         if self.partner_search:
             button(search_row,"CLEAR",lambda:(setattr(self,"partner_search",""),self.show_partners()),"ghost",width=8,pady=4,icon="x").pack(side="left")
-        data=self.backend.partners_and_requests(uid)
+        data=self.backend.partners_and_requests(uid,self.partner_search)
         sections=[("Accepted Partners",data["partners"]),("Incoming Requests",data["incoming"]),("Outgoing Requests",data["outgoing"]),("Discover",self.backend.discover_orgs(uid,self.partner_search))]
         for title,items in sections:
             o,i=card(body); o.pack(fill="x",pady=8); label(i,title,13,T.gold,T.panel,"bold").pack(anchor="w")

@@ -6,6 +6,7 @@ from typing import Iterable, Optional
 
 DATABASE_ENV = "CIVIC_CONNECT_DATABASE_URL"
 LOCAL_DATABASE_ENV = "CIVIC_CONNECT_LOCAL_DATABASE_URL"
+QUERY_TIMEOUT_ENV = "CIVIC_CONNECT_QUERY_TIMEOUT_MS"
 DEFAULT_LOCAL_POSTGRES_URL = "postgresql://postgres:postgres@localhost:5432/civic_connect"
 
 POSTGRES_SCHEMA = """
@@ -145,7 +146,10 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at);
+CREATE INDEX IF NOT EXISTS idx_posts_author_created ON posts(author_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_comments_post_created ON comments(post_id, created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_likes_post ON likes(post_id);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_created ON messages(conversation_id, created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_friendships_requester_status ON friendships(requester_id, status);
@@ -158,6 +162,8 @@ CREATE INDEX IF NOT EXISTS idx_agreements_users ON agreements(government_id, ngo
 CREATE INDEX IF NOT EXISTS idx_projects_users ON projects(owner_id, partner_id);
 CREATE INDEX IF NOT EXISTS idx_reports_project_created ON reports(project_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_users_role_name ON users(role, full_name);
+CREATE INDEX IF NOT EXISTS idx_users_role_org ON users(role, organization_name);
 """
 
 INSERT_ID_TABLES = {
@@ -235,7 +241,14 @@ class Database:
             return self._conn
 
         try:
-            self._conn = psycopg.connect(self.url, row_factory=dict_row)
+            self._conn = psycopg.connect(self.url, row_factory=dict_row, connect_timeout=8)
+            try:
+                timeout_ms = int(os.environ.get(QUERY_TIMEOUT_ENV, "5000"))
+            except ValueError:
+                timeout_ms = 5000
+            if timeout_ms > 0:
+                timeout_ms = max(1000, min(timeout_ms, 60000))
+                self._conn.execute(f"SET statement_timeout = {timeout_ms}")
             return self._conn
         except psycopg.OperationalError as exc:
             self._conn = None

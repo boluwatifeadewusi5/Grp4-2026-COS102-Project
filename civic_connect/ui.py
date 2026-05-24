@@ -124,7 +124,19 @@ class Scroll(tk.Frame):
         self.canvas.configure(yscrollcommand=self.vbar.set)
         self.canvas.pack(side="left", fill="both", expand=True)
         self.vbar.pack(side="right", fill="y")
+        self.canvas.bind("<Enter>", self._bind_wheel)
+        self.canvas.bind("<Leave>", self._unbind_wheel)
+        self.bind("<Destroy>", self._destroy, add="+")
+
+    def _bind_wheel(self, _event=None):
         self.canvas.bind_all("<MouseWheel>", self._wheel)
+
+    def _unbind_wheel(self, _event=None):
+        self.canvas.unbind_all("<MouseWheel>")
+
+    def _destroy(self, event):
+        if event.widget is self:
+            self._unbind_wheel()
 
     def _wheel(self, event):
         try:

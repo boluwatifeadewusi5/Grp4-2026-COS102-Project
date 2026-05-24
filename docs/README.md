@@ -1,6 +1,8 @@
 # Beta 1.3 Documentation
 
-This folder contains all README/setup files and the GitHub Pages website.
+This folder contains release notes, setup guides, and an optional GitHub Pages mirror.
+
+The **deployed website** is in **`Civic connect webpage/`** (Vercel). See [VERCEL.md](../VERCEL.md).
 
 ## Files
 
@@ -9,10 +11,10 @@ This folder contains all README/setup files and the GitHub Pages website.
 - `BETA_1.1.md`: release notes for the Postgres messaging, performance, refresh, and config fixes.
 - `PROJECT_README.md`: app features, run commands, packaging notes.
 - `POSTGRES_HOSTING.md`: local and hosted Postgres setup walkthrough.
-- `index.html`: public showcase/download page.
+- `index.html`: optional GitHub Pages showcase/download page.
 - `styles.css`: website styling.
 
-## GitHub Pages
+## GitHub Pages (optional)
 
 1. Push the repository to GitHub.
 2. Open `Settings > Pages`.
@@ -20,4 +22,4 @@ This folder contains all README/setup files and the GitHub Pages website.
 4. Choose the branch and `/docs` folder.
 5. Save.
 
-The website hosts the project showcase and download link. The app itself remains a Windows Tkinter desktop application.
+For Vercel, use **`Civic connect webpage`** as the root directory instead.

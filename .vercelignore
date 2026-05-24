@@ -1,0 +1,24 @@
+# Desktop app (not deployed to Vercel)
+desktop/
+civic_connect/
+rescources/
+build_windows.bat
+PACKAGING_AND_HOSTING.md
+docs/
+
+# Python / tooling
+**/*.py
+**/__pycache__/**
+venv/
+.venv/
+.github/
+*.bat
+*.spec
+dist/
+build/
+
+# Secrets and local data
+.env
+.env.*
+*.sqlite3
+vercel.json

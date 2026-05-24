@@ -9,3 +9,4 @@ dist/
 config.json
 civic_connect/config.json
 *.env
+*.sqlite3

@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Civic Connect is a Python Tkinter desktop app for community posts, NGO/Government partnerships, agreements, projects, reports, messaging, and cloud-ready shared data.">
-    <title>Civic Connect - Desktop Prototype</title>
+    <meta name="description" content="Civic Connect is a Python Tkinter desktop app for community posts, NGO/Government relations, agreements, projects, reports, messaging, and Postgres-backed shared data.">
+    <title>Civic Connect - Final Release</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -21,13 +21,13 @@
     <main>
       <section class="hero">
         <div>
-          <p class="eyebrow">PYTHON TKINTER + SQLITE / POSTGRES</p>
+          <p class="eyebrow">PYTHON TKINTER + POSTGRES</p>
           <h1>Civic Connect</h1>
           <p class="hero-copy">
-            A desktop civic collaboration prototype for casual community users, NGOs, and Government agencies. It supports posts, messaging, partnerships, agreements, project tracking, reports, notifications, and optional hosted shared data.
+            A desktop civic collaboration app for casual community users, NGOs, and Government agencies. It supports posts, follows, messaging, organization relations, agreements, project tracking, reports, notifications, and local or hosted Postgres data.
           </p>
           <div class="actions" id="download">
-            <a class="button primary" href="https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest/download/CivicConnect.exe">Download Windows EXE</a>
+            <a class="button primary" href="CivicConnect.exe">Download Windows EXE</a>
             <a class="button secondary" href="https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest" rel="noreferrer">Latest Release</a>
           </div>
         </div>
@@ -42,7 +42,7 @@
             <aside class="sidebar">
               <div class="side-title">CIVIC CONNECT</div>
               <div class="side-item active">Dashboard</div>
-              <div class="side-item">Partners</div>
+              <div class="side-item">Relations</div>
               <div class="side-item">Messages</div>
               <div class="side-item">Agreements</div>
               <div class="side-item">Projects</div>
@@ -51,7 +51,7 @@
             <section class="screen">
               <h2>Government Dashboard</h2>
               <div class="metric-row">
-                <div class="metric"><strong>2</strong><span>Partners</span></div>
+                <div class="metric"><strong>2</strong><span>Relations</span></div>
                 <div class="metric"><strong>4</strong><span>Agreements</span></div>
                 <div class="metric"><strong>5</strong><span>Projects</span></div>
               </div>
@@ -74,43 +74,43 @@
 
       <section class="band alt" id="features">
         <div class="section-head">
-          <h2>Built For The Desktop Demo</h2>
-          <p>The app keeps a simple Python codebase while demonstrating real workflows across three role types.</p>
+          <h2>Built For Desktop Collaboration</h2>
+          <p>The app keeps a simple Python codebase while showing real workflows across three role types.</p>
         </div>
         <div class="grid">
           <article class="card">
-            <h3>Public Users</h3>
-            <p>Post community updates, like and comment, manage friends, send casual-only messages, and export summaries.</p>
+            <h3>Casual Users</h3>
+            <p>Post community updates, like and comment, manage friends, follow NGO/Government public profiles, send casual-only messages, and export summaries.</p>
           </article>
           <article class="card">
             <h3>NGOs</h3>
-            <p>Discover Government partners, request partnerships, submit agreements, upload documents, manage projects, and file reports.</p>
+            <p>Discover organizations, request relations, submit agreements with Government partners, upload documents, manage projects, download project CSV files, and file reports.</p>
           </article>
           <article class="card">
             <h3>Government</h3>
-            <p>Review partner requests, approve or reject agreements, monitor project progress, and keep a searchable activity history.</p>
+            <p>Review relation requests, approve or reject agreements, collaborate with Government or NGO peers, monitor project progress, and keep a searchable activity history.</p>
           </article>
         </div>
       </section>
 
       <section class="band" id="cloud">
         <div class="section-head">
-          <h2>Cloud-Ready Shared Data</h2>
-          <p>The executable can run offline with SQLite or connect to a hosted Postgres database with one environment variable.</p>
+          <h2>Postgres Shared Data</h2>
+          <p>The executable can run offline with local Postgres or connect to a hosted Postgres database with one environment variable.</p>
         </div>
         <div class="steps">
           <div class="step">
             <div class="step-number">1</div>
             <div>
-              <h3>Create a hosted Postgres database</h3>
-              <p>Supabase or Neon are good free prototype options. Copy the pooled connection string.</p>
+              <h3>Choose local or hosted Postgres</h3>
+              <p>Use local Postgres for offline work, or Supabase/Neon when multiple installs should share data.</p>
             </div>
           </div>
           <div class="step">
             <div class="step-number">2</div>
             <div>
-              <h3>Set the database URL</h3>
-              <p>Set <code>CIVIC_CONNECT_DATABASE_URL</code> before running or packaging the app.</p>
+              <h3>Set the database URL when hosted</h3>
+              <p>Set <code>CIVIC_CONNECT_DATABASE_URL</code> for online mode, or use <code>CIVIC_CONNECT_LOCAL_DATABASE_URL</code> for a custom local server.</p>
             </div>
           </div>
           <div class="step">
@@ -125,28 +125,28 @@
 
       <section class="band alt">
         <div class="section-head">
-          <h2>Demo Login Details</h2>
-          <p>Fresh databases are seeded automatically the first time the app runs.</p>
+          <h2>Final Release Updates</h2>
+          <p>Beta tester reports were used to finish the organization workflow and project document experience.</p>
         </div>
         <div class="grid">
           <article class="card">
-            <h3>Public User</h3>
-            <p>alex@demo.com<br>Password: password</p>
+            <h3>Organization Relations</h3>
+            <p>NGO-Government, NGO-NGO, and Government-Government accounts can connect, message, and share projects after a relation is accepted.</p>
           </article>
           <article class="card">
-            <h3>NGO</h3>
-            <p>ngo@demo.com<br>Password: password</p>
+            <h3>CSV Downloads</h3>
+            <p>Uploaded project CSV documents can be downloaded directly from the Projects page when the source file is available.</p>
           </article>
           <article class="card">
-            <h3>Government</h3>
-            <p>gov@demo.com<br>Password: password</p>
+            <h3>Polished Branding</h3>
+            <p>Missing icons were added from Iconify/Lucide, and the app now uses the transparent gold landmark icon instead of the default window icon.</p>
           </article>
         </div>
       </section>
     </main>
 
     <footer class="footer">
-      <p>Civic Connect is a desktop prototype. The website hosts the showcase and download; the app itself runs on Windows.</p>
+      <p>Civic Connect is a desktop app. The website hosts the showcase and download; the app itself runs on Windows.</p>
     </footer>
   </body>
 </html>

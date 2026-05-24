@@ -1,8 +1,8 @@
-# Beta 1.4.5 - Civic Connect
+# Civic Connect - Final Release
 
-Beta 1.4.5 is a Python Tkinter desktop app for civic collaboration between Casual Users, NGOs, and Government agencies. The app uses Postgres only for storage, so the same code can run against a hosted database online or a local Postgres server offline.
+Civic Connect is a Python Tkinter desktop app for civic collaboration between Casual Users, NGOs, and Government agencies. The app uses Postgres only for storage, so the same code can run against a hosted database online or a local Postgres server offline.
 
-See [beta-1.4.5.md](beta-1.4.5.md) for the latest database startup and launch stability fixes.
+See [final-release.md](final-release.md) for the latest beta-test fixes.
 
 ## Run The App
 
@@ -41,7 +41,7 @@ CIVIC_CONNECT_LOCAL_DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/civic
 
 ## Refresh
 
-Tkinter screens do not update automatically when another user changes the database. Beta 1.4.5 no longer rebuilds the active page on a timer; it only refreshes the notification count in the top bar.
+Tkinter screens do not update automatically when another user changes the database. The app no longer rebuilds the active page on a timer; it only refreshes the notification count in the top bar.
 
 The default refresh interval is 15 seconds. You can set any value from 10 to 60 seconds:
 
@@ -76,6 +76,7 @@ python main.py
 
 ## Features
 
+- Final release fixes organization relations, same-role organization messaging/projects, project CSV downloads, and icon/window branding.
 - Beta 1.4.5 opens even when Postgres times out, moves the desktop entrypoint to root `main.py`, and updates packaging.
 - Beta 1.4 changes auto-refresh to notification-count refresh only, fixes multi-word search, and adds a Casual Connect tab for following NGO/Government accounts.
 - Beta 1.3 adds background database loading, homepage live stats, and heavier lag reduction.
@@ -86,13 +87,14 @@ python main.py
 - Search posts by topic, body, or author.
 - Search suggested Casual Users.
 - Casual Users can search and follow NGO/Government public profiles from Connect.
-- Search discoverable NGO/Government partners.
+- Search discoverable NGO/Government organizations and relations.
 - Filter agreements by status and text.
 - Filter projects by status and text.
 - Search reports.
 - Export dashboard/activity summaries to CSV.
 - Upload document records to both agreements and projects.
-- Strong backend checks for role separation and accepted partnerships.
+- Download uploaded project CSV documents when the source file is available on the device.
+- Strong backend checks for role separation and accepted relations.
 
 ## Core Workflows
 
@@ -111,10 +113,10 @@ Casual Users:
 
 Government and NGO users:
 
-- Discover opposite-side organizations
-- Send partner requests
-- Accept/reject partner requests
-- Secure Government-NGO messaging
+- Discover NGO and Government organizations
+- Send relation requests
+- Accept/reject relation requests
+- Secure organization messaging after accepted relations
 - Create agreements
 - Government approval workflow
 - Upload document records
@@ -139,7 +141,7 @@ dist/CivicConnect.exe
 You can also run PyInstaller directly:
 
 ```bash
-pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" main.py
+python -m PyInstaller --clean --noconfirm --onefile --windowed --name CivicConnect --icon "rescources\app.ico" --add-data "rescources;rescources" main.py
 ```
 
 ## Documentation

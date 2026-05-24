@@ -32,10 +32,10 @@ python -m pip install -r requirements.txt
 ## Development
 
 ### Government and NGO Features
-- Discover opposite-side organizations
-- Send partner requests
-- Accept/reject partner requests
-- Secure Government-NGO messaging
+- Discover NGO and Government organizations
+- Send relation requests across NGO, Government, and same-role organization accounts
+- Accept/reject relation requests
+- Secure organization messaging after accepted relations
 - Create agreements
 - Government approval workflow: approve, reject, request changes
 - Resubmit, activate, and complete agreements through controlled transitions
@@ -46,6 +46,7 @@ python -m pip install -r requirements.txt
 - Notifications
 - Live dashboard counts
 - CSV export
+- Download uploaded project CSV documents when the source file is available on the device
 
 ## Data Storage
 
@@ -88,7 +89,7 @@ dist/CivicConnect.exe
 You can also run PyInstaller directly:
 
 ```bash
-pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" main.py
+python -m PyInstaller --clean --noconfirm --onefile --windowed --name CivicConnect --icon "rescources\app.ico" --add-data "rescources;rescources" main.py
 ```
 
 ## Free Distribution And Hosting

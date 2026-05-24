@@ -20,11 +20,15 @@ if (-not (Test-Path (Join-Path $DataDir "PG_VERSION"))) {
 
 $ready = & pg_isready -h 127.0.0.1 -p $Port -U postgres 2>$null
 if ($LASTEXITCODE -ne 0) {
-    & pg_ctl -D $DataDir -o "-p $Port" -l $LogFile start
+    $pgCtl = (Get-Command pg_ctl).Source
+    Start-Process -FilePath $pgCtl -ArgumentList @("-D", $DataDir, "-o", "-p $Port", "-l", $LogFile, "start") -WindowStyle Hidden | Out-Null
     for ($i = 0; $i -lt 30; $i++) {
         $ready = & pg_isready -h 127.0.0.1 -p $Port -U postgres 2>$null
         if ($LASTEXITCODE -eq 0) { break }
         Start-Sleep -Milliseconds 500
+    }
+    if ($LASTEXITCODE -ne 0) {
+        throw "Local Postgres did not become ready on port $Port. Check $LogFile."
     }
 }
 

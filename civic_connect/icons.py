@@ -4,6 +4,7 @@ from typing import Dict, Optional, Tuple
 import tkinter as tk
 
 _CACHE: Dict[Tuple[str, str, int], tk.PhotoImage] = {}
+FALLBACK_ICON = "landmark"
 
 
 def resource_dir() -> Path:
@@ -26,6 +27,10 @@ def get_icon(name: str, tone: str = "gold", size: int = 16) -> Optional[tk.Photo
     if key in _CACHE:
         return _CACHE[key]
     path = resource_dir() / f"{name}-{tone}.png"
+    if not path.exists():
+        path = resource_dir() / f"{FALLBACK_ICON}-{tone}.png"
+    if not path.exists() and tone != "gold":
+        path = resource_dir() / f"{FALLBACK_ICON}-gold.png"
     if not path.exists():
         return None
     image = tk.PhotoImage(file=path.resolve().as_posix())

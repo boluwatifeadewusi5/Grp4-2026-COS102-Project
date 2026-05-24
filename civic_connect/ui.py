@@ -151,6 +151,9 @@ class Modal(tk.Toplevel):
         self.title(title)
         self.geometry(f"{width}x{height}")
         self.configure(bg=T.bg)
+        app_icon = getattr(parent, "app_icon", None)
+        if app_icon:
+            self.iconphoto(False, app_icon)
         self.transient(parent)
         self.grab_set()
         self.body = tk.Frame(self, bg=T.bg, padx=20, pady=20)

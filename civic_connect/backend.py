@@ -397,9 +397,9 @@ class CivicBackend:
         if ua["role"] == ub["role"] == "casual":
             return "casual"
         roles = {ua["role"], ub["role"]}
-        if roles == {"ngo", "government"}:
+        if roles.issubset({"ngo", "government"}):
             if not self.has_accepted_partnership(a, b):
-                raise PermissionError("Government and NGOs must be connected partners before messaging.")
+                raise PermissionError("Organizations must be connected relations before messaging.")
             return "org"
         raise PermissionError("Casual users cannot interact with Government/NGO accounts, and Government/NGO users cannot message casual users.")
 
@@ -468,13 +468,24 @@ class CivicBackend:
         if self.user(user_id)["role"] not in ("ngo", "government"):
             raise PermissionError("Only NGO and Government users can use this feature.")
 
+    def require_org_pair(self, a: int, b: int):
+        if a == b:
+            raise BackendError("You cannot create a relation with your own account.")
+        ua, ub = self.user(a), self.user(b)
+        roles = {ua["role"], ub["role"]}
+        if not roles.issubset({"ngo", "government"}):
+            raise PermissionError("Relations are only for NGO and Government accounts.")
+        return ua, ub
+
     def require_gov_ngo_pair(self, a: int, b: int):
-        roles = {self.user(a)["role"], self.user(b)["role"]}
+        ua, ub = self.require_org_pair(a, b)
+        roles = {ua["role"], ub["role"]}
         if roles != {"ngo", "government"}:
-            raise PermissionError("Partnerships are only between Government Agencies and NGOs.")
+            raise PermissionError("Formal agreements require one Government account and one NGO account.")
+        return ua, ub
 
     def has_accepted_partnership(self, a: int, b: int) -> bool:
-        self.require_gov_ngo_pair(a, b)
+        self.require_org_pair(a, b)
         row = self.db.one(
             "SELECT 1 FROM partner_requests WHERE ((requester_id=? AND receiver_id=?) OR (requester_id=? AND receiver_id=?)) AND status='accepted'",
             (a, b, b, a),
@@ -483,15 +494,15 @@ class CivicBackend:
 
     def require_accepted_partnership(self, a: int, b: int):
         if not self.has_accepted_partnership(a, b):
-            raise PermissionError("Create and accept a partnership first.")
+            raise PermissionError("Create and accept a relation first.")
 
     def send_partner_request(self, requester_id: int, receiver_id: int, note: str = "") -> int:
-        self.require_gov_ngo_pair(requester_id, receiver_id)
+        self.require_org_pair(requester_id, receiver_id)
         existing = self.db.one("SELECT * FROM partner_requests WHERE (requester_id=? AND receiver_id=?) OR (requester_id=? AND receiver_id=?)", (requester_id, receiver_id, receiver_id, requester_id))
         if existing:
-            raise BackendError("A partner request already exists between these accounts.")
+            raise BackendError("A relation request already exists between these accounts.")
         request_id = self.db.execute("INSERT INTO partner_requests(requester_id, receiver_id, note) VALUES(?,?,?)", (requester_id, receiver_id, note.strip()))
-        self.notify(receiver_id, "New partner request", f"{self.user(requester_id)['full_name']} wants to connect.")
+        self.notify(receiver_id, "New relation request", f"{self.user(requester_id)['full_name']} wants to connect.")
         return request_id
 
     def respond_partner_request(self, request_id: int, receiver_id: int, accept: bool):
@@ -499,10 +510,10 @@ class CivicBackend:
         if not pr or pr["receiver_id"] != receiver_id:
             raise PermissionError("You can only respond to requests sent to you.")
         if pr["status"] != "pending":
-            raise BackendError("This partner request has already been handled.")
+            raise BackendError("This relation request has already been handled.")
         status = "accepted" if accept else "rejected"
         self.db.execute("UPDATE partner_requests SET status=? WHERE id=?", (status, request_id))
-        self.notify(pr["requester_id"], "Partner request updated", f"Your partner request was {status}.")
+        self.notify(pr["requester_id"], "Relation request updated", f"Your relation request was {status}.")
         if accept:
             self.get_or_create_conversation(pr["requester_id"], pr["receiver_id"])
 
@@ -553,13 +564,9 @@ class CivicBackend:
 
     def discover_orgs(self, user_id: int, search: str = "", limit: Optional[int] = 30) -> List[Dict]:
         me = self.user(user_id)
-        if me["role"] == "government":
-            role = "ngo"
-        elif me["role"] == "ngo":
-            role = "government"
-        else:
-            raise PermissionError("Only Government and NGO users can discover partners.")
-        params = [role, user_id, user_id]
+        if me["role"] not in ("ngo", "government"):
+            raise PermissionError("Only Government and NGO users can discover organizations.")
+        params = [user_id, user_id, user_id]
         search_filter = self._search_sql(["u.full_name", "u.organization_name", "u.location", "u.bio", "u.email", "u.role"], search, params)
         limit_value = self._limit_value(limit, default=30)
         params.append(limit_value)
@@ -567,7 +574,8 @@ class CivicBackend:
             f"""
             SELECT u.id,u.full_name,u.email,u.role,u.organization_name,u.location,u.bio,u.verified
             FROM users u
-            WHERE u.role=?
+            WHERE u.role IN ('ngo','government')
+              AND u.id<>?
               AND NOT EXISTS (
                   SELECT 1 FROM partner_requests p
                   WHERE p.receiver_id=? AND p.requester_id=u.id AND p.status IN ('pending','accepted')
@@ -582,6 +590,7 @@ class CivicBackend:
 
     # ---------- agreements ----------
     def create_agreement(self, creator_id: int, partner_id: int, title: str, summary: str, budget: float = 0) -> int:
+        self.require_gov_ngo_pair(creator_id, partner_id)
         self.require_accepted_partnership(creator_id, partner_id)
         uc = self.user(creator_id)
         government_id = creator_id if uc["role"] == "government" else partner_id
@@ -757,6 +766,21 @@ class CivicBackend:
     def documents_for_project(self, project_id: int, user_id: int) -> List[Dict]:
         self.project(project_id, user_id)
         return self.db.query("SELECT d.*, u.full_name AS uploader FROM documents d JOIN users u ON u.id=d.uploader_id WHERE project_id=? ORDER BY d.created_at DESC", (project_id,))
+
+    def project_document(self, document_id: int, user_id: int) -> Dict:
+        row = self.db.one(
+            """
+            SELECT d.*, u.full_name AS uploader, p.title AS project_title
+            FROM documents d
+            JOIN users u ON u.id=d.uploader_id
+            JOIN projects p ON p.id=d.project_id
+            WHERE d.id=? AND d.project_id IS NOT NULL AND (p.owner_id=? OR p.partner_id=?)
+            """,
+            (document_id, user_id, user_id),
+        )
+        if not row:
+            raise PermissionError("Project document not available.")
+        return row
 
     def documents_for_projects(self, project_ids: List[int], user_id: int, per_project: int = 4) -> Dict[int, List[Dict]]:
         if not project_ids:

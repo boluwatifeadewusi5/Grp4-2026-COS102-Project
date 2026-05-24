@@ -3,3 +3,5 @@ API endpoint format: https://api.iconify.design/lucide/{icon}.svg
 Icon set: Lucide Icons via Iconify
 Lucide license: ISC License
 Downloaded SVG files are converted to PNG files for Tkinter PhotoImage support.
+
+Final release additions: lucide/loader-circle and lucide/refresh-cw from Iconify API.

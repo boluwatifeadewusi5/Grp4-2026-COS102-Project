@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Beta 1.4.5 is a Python Tkinter desktop app for community posts, NGO/Government partnerships, follows, agreements, projects, reports, messaging, and Postgres-backed shared data.">
-    <title>Beta 1.4.5 - Civic Connect</title>
+    <meta name="description" content="Civic Connect is a Python Tkinter desktop app for community posts, NGO/Government relations, follows, agreements, projects, reports, messaging, and Postgres-backed shared data.">
+    <title>Civic Connect - Final Release</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -24,7 +24,7 @@
           <p class="eyebrow">PYTHON TKINTER + POSTGRES</p>
           <h1>Civic Connect</h1>
           <p class="hero-copy">
-            A desktop civic collaboration app for casual community users, NGOs, and Government agencies. It supports posts, follows, messaging, partnerships, agreements, project tracking, reports, notifications, and local or hosted Postgres data.
+            A desktop civic collaboration app for casual community users, NGOs, and Government agencies. It supports posts, follows, messaging, organization relations, agreements, project tracking, reports, notifications, and local or hosted Postgres data.
           </p>
           <div class="actions" id="download">
             <a class="button primary" href="https://github.com/boluwatifeadewusi5/beta-1.0/releases/latest/download/CivicConnect.exe">Download Windows EXE</a>
@@ -42,7 +42,7 @@
             <aside class="sidebar">
               <div class="side-title">Civic Connect</div>
               <div class="side-item active">Dashboard</div>
-              <div class="side-item">Partners</div>
+              <div class="side-item">Relations</div>
               <div class="side-item">Messages</div>
               <div class="side-item">Agreements</div>
               <div class="side-item">Projects</div>
@@ -51,7 +51,7 @@
             <section class="screen">
               <h2>Government Dashboard</h2>
               <div class="metric-row">
-                <div class="metric"><strong>2</strong><span>Partners</span></div>
+                <div class="metric"><strong>2</strong><span>Relations</span></div>
                 <div class="metric"><strong>4</strong><span>Agreements</span></div>
                 <div class="metric"><strong>5</strong><span>Projects</span></div>
               </div>
@@ -84,32 +84,32 @@
           </article>
           <article class="card">
             <h3>NGOs</h3>
-            <p>Discover Government partners, request partnerships, submit agreements, upload documents, manage projects, and file reports.</p>
+            <p>Discover organizations, request relations, submit agreements with Government partners, upload documents, manage projects, download project CSV files, and file reports.</p>
           </article>
           <article class="card">
             <h3>Government</h3>
-            <p>Review partner requests, approve or reject agreements, monitor project progress, and keep a searchable activity history.</p>
+            <p>Review relation requests, approve or reject agreements, collaborate with Government or NGO peers, monitor project progress, and keep a searchable activity history.</p>
           </article>
         </div>
       </section>
 
       <section class="band">
         <div class="section-head">
-          <h2>Beta 1.4.5 Updates</h2>
-          <p>Focused fixes for database startup, launch stability, and packaging from the root entrypoint.</p>
+          <h2>Final Release Updates</h2>
+          <p>Focused fixes for organization relations, same-role interaction, project CSV downloads, and icon polish.</p>
         </div>
         <div class="grid">
           <article class="card">
-            <h3>Safer Startup</h3>
-            <p>The app opens a database setup/retry screen when hosted or local Postgres cannot be reached.</p>
+            <h3>Organization Relations</h3>
+            <p>NGO-Government, NGO-NGO, and Government-Government accounts can connect, message, and collaborate on projects.</p>
           </article>
           <article class="card">
-            <h3>Root Entrypoint</h3>
-            <p>The packaged app now builds from root <code>main.py</code> instead of the old desktop folder path.</p>
+            <h3>Project CSV Downloads</h3>
+            <p>Uploaded project CSV documents can be downloaded from the Projects page when the source file is available.</p>
           </article>
           <article class="card">
-            <h3>Configurable Timeout</h3>
-            <p>Connection attempts use a short configurable timeout so the interface does not die on slow networks.</p>
+            <h3>Icon Polish</h3>
+            <p>Missing icons were added from Iconify/Lucide, and the transparent gold landmark icon is used for app windows.</p>
           </article>
         </div>
       </section>
@@ -156,11 +156,11 @@
           </article>
           <article class="card">
             <h3>NGO Workspace</h3>
-            <p>NGOs discover partners, submit agreements, manage projects, upload documents, and publish reports.</p>
+            <p>NGOs discover organizations, manage relations, submit agreements with Government partners, manage projects, upload/download CSV documents, and publish reports.</p>
           </article>
           <article class="card">
             <h3>Government Review</h3>
-            <p>Government users approve partners, review agreement changes, monitor projects, and track public initiatives.</p>
+            <p>Government users approve relations, review agreement changes, collaborate with peers, monitor projects, and track public initiatives.</p>
           </article>
         </div>
       </section>

@@ -1,6 +1,6 @@
-# Postgres Hosting Guide For Beta 1.4.5
+# Postgres Hosting Guide For Civic Connect
 
-Beta 1.4.5 uses Postgres only. The Tkinter app still runs on Windows, while the database can be either:
+Civic Connect uses Postgres only. The Tkinter app still runs on Windows, while the database can be either:
 
 - Online: a hosted Postgres database such as Supabase or Neon.
 - Offline: a Postgres server installed on the same computer.

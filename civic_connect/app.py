@@ -6,12 +6,13 @@ from tkinter import ttk, filedialog
 from pathlib import Path
 from typing import Dict, Optional
 from .backend import CivicBackend, BackendError, AuthError, PermissionError
+from .icons import get_icon
 from .performance import PerformanceManager
 from .theme import T, FONT
 from .ui import clear, label, icon_label, button, entry, get_entry, text_box, card, tag, Scroll, Modal, toast, error
 
 APP_NAME = "Civic Connect"
-APP_VERSION = "Beta 1.4.6"
+APP_VERSION = "Final Release"
 VIEW_LIMIT = 80
 COMPACT_VIEW_LIMIT = 60
 
@@ -22,6 +23,9 @@ class CivicConnectApp(tk.Tk):
         self.geometry("1200x780")
         self.minsize(920, 620)
         self.configure(bg=T.bg)
+        self.app_icon = get_icon("landmark", "gold", 32)
+        if self.app_icon:
+            self.iconphoto(True, self.app_icon)
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         gc.set_threshold(900, 15, 15)
         self.performance = PerformanceManager(self)
@@ -271,6 +275,7 @@ class CivicConnectApp(tk.Tk):
             "Notifications": "bell",
             "Dashboard": "layout-dashboard",
             "Partners": "handshake",
+            "Relations": "handshake",
             "Agreements": "file-check-2",
             "Projects": "folder-kanban",
             "Reports": "bar-chart-3",
@@ -367,7 +372,7 @@ class CivicConnectApp(tk.Tk):
         flow = tk.Frame(visual, bg=T.bg); flow.pack(fill="x")
         for idx, (title, icon, color) in enumerate([
             ("Community", "users", T.blue),
-            ("Partners", "handshake", T.red),
+            ("Relations", "handshake", T.red),
             ("Approvals", "file-check-2", T.gold),
             ("Shared Data", "cloud", T.green),
         ]):
@@ -380,8 +385,8 @@ class CivicConnectApp(tk.Tk):
         self.run_view_task(token, self.backend.public_stats, lambda result: self.render_public_stats(stats, result))
         cards = tk.Frame(main,bg=T.bg,pady=22); cards.pack(fill="x")
         self.role_card(cards,"CASUAL USER","Posts, comments, likes, friendships, follows, casual-only messaging",T.blue,"users").pack(side="left",fill="x",expand=True,padx=7)
-        self.role_card(cards,"NGO","Discover government partners, agreements, messages, projects, reports",T.red,"handshake").pack(side="left",fill="x",expand=True,padx=7)
-        self.role_card(cards,"GOVERNMENT","Approve partners, review agreements, manage public initiatives",T.green,"landmark").pack(side="left",fill="x",expand=True,padx=7)
+        self.role_card(cards,"NGO","Manage organization relations, agreements, messages, projects, reports",T.red,"handshake").pack(side="left",fill="x",expand=True,padx=7)
+        self.role_card(cards,"GOVERNMENT","Review relations, agreements, projects, and public initiatives",T.green,"landmark").pack(side="left",fill="x",expand=True,padx=7)
 
     def render_public_stats(self, parent, stats=None):
         if not parent.winfo_exists():
@@ -390,7 +395,7 @@ class CivicConnectApp(tk.Tk):
         stats = stats or {}
         items = [
             ("Casual Users", str(stats.get("casual_users", "...")), "community accounts", T.blue, "users"),
-            ("NGOs", str(stats.get("ngo_users", "...")), "partner organizations", T.red, "handshake"),
+            ("NGOs", str(stats.get("ngo_users", "...")), "organization accounts", T.red, "handshake"),
             ("Government", str(stats.get("government_users", "...")), "agency accounts", T.green, "landmark"),
             ("Projects", str(stats.get("projects", "...")), "active civic work", T.gold, "folder-kanban"),
         ]
@@ -510,7 +515,7 @@ class CivicConnectApp(tk.Tk):
         if self.current_user["role"]=="casual":
             items=[("Feed",self.show_casual_home),("Friends",self.show_friends),("Connect",self.show_connect),("Messages",self.show_casual_messages),("Profile",self.show_profile),("Notifications",self.show_notifications)]
         else:
-            items=[("Dashboard",self.show_org_home),("Partners",self.show_partners),("Messages",self.show_org_messages),("Agreements",self.show_agreements),("Projects",self.show_projects),("Reports",self.show_reports),("Notifications",self.show_notifications)]
+            items=[("Dashboard",self.show_org_home),("Relations",self.show_partners),("Messages",self.show_org_messages),("Agreements",self.show_agreements),("Projects",self.show_projects),("Reports",self.show_reports),("Notifications",self.show_notifications)]
         for name,cmd in items:
             button(side,name,cmd,"primary" if name==active else "ghost",pady=9,icon=self.icon_for_nav(name)).pack(fill="x",pady=3)
         button(side,"About Civic Connect",self.show_landing,"outline",pady=7,icon="home").pack(side="bottom",fill="x")
@@ -646,7 +651,7 @@ class CivicConnectApp(tk.Tk):
         self.set_active_view(self.show_connect)
         body=self.shell("Connect"); uid=self.current_user["id"]
         label(body,"Connect",22,T.text,T.bg,"bold").pack(anchor="w")
-        label(body,"Follow public NGO and Government profiles. Casual users can follow these accounts without opening organization-only partnerships or messages.",10,T.muted,T.bg,wrap=900).pack(anchor="w",pady=(0,10))
+        label(body,"Follow public NGO and Government profiles. Casual users can follow these accounts without opening organization-only relations or messages.",10,T.muted,T.bg,wrap=900).pack(anchor="w",pady=(0,10))
         search_row=tk.Frame(body,bg=T.bg); search_row.pack(fill="x",pady=(8,2))
         search=entry(search_row,"Search NGOs, government, organizations, location"); self.set_entry_value(search,self.connect_search); search.pack(side="left",fill="x",expand=True,ipady=7)
         def apply_search():
@@ -744,9 +749,9 @@ class CivicConnectApp(tk.Tk):
         self.cached_unread_count = data.get("unread", self.cached_unread_count)
         body=self.shell("Dashboard"); counts=data["counts"]
         label(body,f"{self.current_user['role'].title()} Dashboard",22,T.text,T.bg,"bold").pack(anchor="w")
-        label(body,"Government and NGO workspaces are separate from Casual Users. Partnerships must be accepted before messages and agreements.",10,T.muted,T.bg,wrap=900).pack(anchor="w",pady=(0,12))
+        label(body,"Organization workspaces are separate from Casual Users. Relations must be accepted before messages, projects, and formal agreements.",10,T.muted,T.bg,wrap=900).pack(anchor="w",pady=(0,12))
         button(body,"EXPORT CSV",self.export_summary,"outline",width=14,icon="download").pack(anchor="e")
-        metric_items=[(k.replace("_"," ").title(),str(counts[k]),"current count",T.gold if "pending" in k else T.green) for k in ["partners","pending_requests","agreements","pending_agreements","projects","reports","notifications"]]
+        metric_items=[("Relations" if k=="partners" else k.replace("_"," ").title(),str(counts[k]),"current count",T.gold if "pending" in k else T.green) for k in ["partners","pending_requests","agreements","pending_agreements","projects","reports","notifications"]]
         self.stat_grid(body,metric_items,columns=4).pack(fill="x")
         panels=tk.Frame(body,bg=T.bg,pady=14); panels.pack(fill="x")
         self.org_list_panel(panels,"Recent Agreements",data["agreements"],"title","status").pack(side="left",fill="both",expand=True,padx=6)
@@ -777,10 +782,10 @@ class CivicConnectApp(tk.Tk):
 
     def show_partners(self, data=None):
         self.set_active_view(self.show_partners)
-        body=self.shell("Partners"); uid=self.current_user["id"]
-        label(body,"Partners & Requests",22,T.text,T.bg,"bold").pack(anchor="w")
+        body=self.shell("Relations"); uid=self.current_user["id"]
+        label(body,"Relations & Requests",22,T.text,T.bg,"bold").pack(anchor="w")
         search_row=tk.Frame(body,bg=T.bg); search_row.pack(fill="x",pady=(8,2))
-        search=entry(search_row,"Search partners, requests, organizations"); self.set_entry_value(search,self.partner_search); search.pack(side="left",fill="x",expand=True,ipady=7)
+        search=entry(search_row,"Search relations, requests, organizations"); self.set_entry_value(search,self.partner_search); search.pack(side="left",fill="x",expand=True,ipady=7)
         def apply_search():
             self.partner_search=get_entry(search); self.show_partners()
         search.bind("<Return>", lambda _event: apply_search())
@@ -789,7 +794,7 @@ class CivicConnectApp(tk.Tk):
             button(search_row,"CLEAR",lambda:(setattr(self,"partner_search",""),self.show_partners()),"ghost",width=8,pady=4,icon="x").pack(side="left")
         if data is None:
             token = self.next_view_token()
-            self.loading(body, "Searching partners and organizations...")
+            self.loading(body, "Searching relations and organizations...")
             def work():
                 partner_data = self.backend.partners_and_requests(uid,self.partner_search, limit=COMPACT_VIEW_LIMIT)
                 return {
@@ -801,7 +806,7 @@ class CivicConnectApp(tk.Tk):
             return
         self.cached_unread_count = data.get("unread", self.cached_unread_count)
         partner_data = data["partners"]
-        sections=[("Accepted Partners",partner_data["partners"]),("Incoming Requests",partner_data["incoming"]),("Outgoing Requests",partner_data["outgoing"]),("Discover",data["discover"])]
+        sections=[("Accepted Relations",partner_data["partners"]),("Incoming Requests",partner_data["incoming"]),("Outgoing Requests",partner_data["outgoing"]),("Discover Organizations",data["discover"])]
         for title,items in sections:
             o,i=card(body); o.pack(fill="x",pady=8); label(i,title,13,T.gold,T.panel,"bold").pack(anchor="w")
             if not items:
@@ -812,13 +817,14 @@ class CivicConnectApp(tk.Tk):
                 if title=="Incoming Requests":
                     button(r,"ACCEPT",lambda rid=item["id"]: self.respond_partner(rid,True),"primary",pady=3,icon="check").pack(side="right",padx=3)
                     button(r,"REJECT",lambda rid=item["id"]: self.respond_partner(rid,False),"danger",pady=3,icon="x").pack(side="right",padx=3)
-                elif title=="Discover": button(r,"CONNECT",lambda oid=item["id"]: self.partner_request(oid),"outline",pady=3,icon="handshake").pack(side="right")
-                elif title=="Accepted Partners":
+                elif title=="Discover Organizations": button(r,"CONNECT",lambda oid=item["id"]: self.partner_request(oid),"outline",pady=3,icon="handshake").pack(side="right")
+                elif title=="Accepted Relations":
                     button(r,"MESSAGE",lambda oid=item["other_id"]: self.open_org_conversation(oid),"outline",pady=3,icon="message-circle").pack(side="right",padx=3)
-                    button(r,"NEW AGREEMENT",lambda oid=item["other_id"]: self.new_agreement_modal(oid),"primary",pady=3,icon="file-check-2").pack(side="right",padx=3)
+                    if {self.current_user["role"], item["role"]} == {"ngo", "government"}:
+                        button(r,"NEW AGREEMENT",lambda oid=item["other_id"]: self.new_agreement_modal(oid),"primary",pady=3,icon="file-check-2").pack(side="right",padx=3)
 
     def partner_request(self,oid):
-        self.run_action(lambda: self.backend.send_partner_request(self.current_user["id"],oid,"Requesting partnership through Civic Connect."), self.show_partners)
+        self.run_action(lambda: self.backend.send_partner_request(self.current_user["id"],oid,"Requesting a relation through Civic Connect."), self.show_partners)
     def respond_partner(self,rid,accept):
         self.run_action(lambda: self.backend.respond_partner_request(rid,self.current_user["id"],accept), self.show_partners)
     def open_org_conversation(self,other):
@@ -867,7 +873,7 @@ class CivicConnectApp(tk.Tk):
         for c in convs:
             def pick(cid=c["id"]): self.selected_conversation_id=cid; self.show_messages(active)
             r=button(left,f"{c['other_name']}\n{c.get('last_message') or 'No messages yet'}",pick,"outline" if c["id"]==self.selected_conversation_id else "ghost",pady=9); r.pack(fill="x",pady=4)
-        if not convs: label(left,"No conversations yet. Add a friend or partner first.",10,T.muted,T.bg,wrap=280).pack(anchor="w")
+        if not convs: label(left,"No conversations yet. Add a friend or relation first.",10,T.muted,T.bg,wrap=280).pack(anchor="w")
         center_o,center=card(layout); center_o.pack(side="left",fill="both",expand=True)
         if not self.selected_conversation_id and convs: self.selected_conversation_id=convs[0]["id"]
         if self.selected_conversation_id:
@@ -1005,6 +1011,28 @@ class CivicConnectApp(tk.Tk):
         name = Path(p).name
         self.run_action(lambda: self.backend.add_document(user_id,name,project_id=pid,path=p), self.show_projects)
 
+    def download_project_csv(self, document_id, suggested_name):
+        initial = Path(suggested_name or "project_document.csv").name
+        if not initial.lower().endswith(".csv"):
+            initial = f"{initial}.csv"
+        path=filedialog.asksaveasfilename(defaultextension=".csv",initialfile=initial,filetypes=[("CSV files","*.csv"),("All files","*.*")])
+        if not path:
+            return
+        user_id = self.current_user["id"]
+        target = Path(path)
+        self.config(cursor="watch")
+        def work():
+            doc = self.backend.project_document(document_id,user_id)
+            if not doc["name"].lower().endswith(".csv"):
+                raise BackendError("Only CSV project documents can be downloaded here.")
+            source_path = doc.get("path") or ""
+            source = Path(source_path)
+            if not source_path or not source.exists() or not source.is_file():
+                raise BackendError("The original uploaded CSV file is not available on this device.")
+            target.write_bytes(source.read_bytes())
+            return target.name
+        self.performance.run(work, lambda name: (self.config(cursor=""), toast("Downloaded",f"Saved {name}.")), lambda exc: (self.config(cursor=""), error(exc)))
+
     # ---------- projects/reports ----------
     def show_projects(self, data=None):
         self.set_active_view(self.show_projects)
@@ -1039,7 +1067,7 @@ class CivicConnectApp(tk.Tk):
         for p in projects:
             o,i=card(body); o.pack(fill="x",pady=7)
             label(i,p["title"],13,T.text,T.panel,"bold").pack(anchor="w")
-            label(i,f"Focus: {p['focus_area']} | Status: {p['status']} | Progress: {p['progress']}% | Partner: {p.get('partner_name') or 'None'}",9,T.muted,T.panel).pack(anchor="w")
+            label(i,f"Focus: {p['focus_area']} | Status: {p['status']} | Progress: {p['progress']}% | Collaborator: {p.get('partner_name') or 'None'}",9,T.muted,T.panel).pack(anchor="w")
             inputs=tk.Frame(i,bg=T.panel); inputs.pack(fill="x",pady=(8,4))
             progress=entry(inputs,"Progress 0-100"); progress.pack(side="left",fill="x",expand=True,ipady=6)
             project_status=entry(inputs,"Status: planning, active, paused, blocked, completed"); project_status.pack(side="left",fill="x",expand=True,ipady=6,padx=6)
@@ -1049,7 +1077,10 @@ class CivicConnectApp(tk.Tk):
             button(actions,"REPORT",lambda pid=p["id"]:self.report_modal(pid),"primary",pady=4,icon="bar-chart-3").pack(side="right")
             docs=docs_by_project.get(p["id"], [])
             for d in docs[:4]:
-                label(i,f"Document: {d['name']} - {d['uploader']} - {d['created_at']}",9,T.muted,T.panel).pack(anchor="w",pady=2)
+                doc_row=tk.Frame(i,bg=T.panel); doc_row.pack(fill="x",pady=2)
+                label(doc_row,f"Document: {d['name']} - {d['uploader']} - {d['created_at']}",9,T.muted,T.panel).pack(side="left",anchor="w")
+                if d["name"].lower().endswith(".csv"):
+                    button(doc_row,"DOWNLOAD CSV",lambda did=d["id"],name=d["name"]: self.download_project_csv(did,name),"outline",pady=3,icon="download").pack(side="right")
         if not projects:
             label(body,"No projects match the current view.",10,T.muted,T.bg).pack(anchor="w",pady=10)
     def new_project_modal(self):
@@ -1057,8 +1088,8 @@ class CivicConnectApp(tk.Tk):
         title=entry(m.body,"Project title"); title.pack(fill="x",ipady=9,pady=5)
         focus=entry(m.body,"Focus area"); focus.pack(fill="x",ipady=9,pady=5)
         partner_var=tk.StringVar(value="")
-        label(m.body,"Optional partner",10,T.muted,T.bg).pack(anchor="w")
-        cb=ttk.Combobox(m.body,textvariable=partner_var,values=["Loading partners..."],state="readonly"); cb.pack(fill="x",pady=5)
+        label(m.body,"Optional collaborator",10,T.muted,T.bg).pack(anchor="w")
+        cb=ttk.Combobox(m.body,textvariable=partner_var,values=["Loading relations..."],state="readonly"); cb.pack(fill="x",pady=5)
         user_id = self.current_user["id"]
         def partners_loaded(partners):
             if m.winfo_exists():

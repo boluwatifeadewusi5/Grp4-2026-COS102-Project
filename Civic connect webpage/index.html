@@ -27,9 +27,27 @@
             A desktop civic collaboration app for casual community users, NGOs, and Government agencies. It supports posts, messaging, partnerships, agreements, project tracking, reports, notifications, and local or hosted Postgres data.
           </p>
           <div class="actions" id="download">
-            <a class="button primary" href="CivicConnect.exe" download>Download Civic Connect</a>
+            <a class="button primary" href="CivicConnect.exe" download onclick="incrementDownloadCount()">Download Civic Connect</a>
             <a class="button secondary" href="https://github.com/boluwatifeadewusi5/beta-1.0/releases/latest" rel="noreferrer">Latest Release</a>
           </div>
+          <p class="download-counter" id="download-counter" aria-live="polite"></p>
+          <script>
+            function getDownloadCount() {
+              return parseInt(localStorage.getItem('civicconnect_downloads') || '0', 10);
+            }
+            function incrementDownloadCount() {
+              var count = getDownloadCount() + 1;
+              localStorage.setItem('civicconnect_downloads', count);
+              renderDownloadCount(count);
+            }
+            function renderDownloadCount(count) {
+              var el = document.getElementById('download-counter');
+              if (el) {
+                el.textContent = count === 1 ? '1 download' : count + ' downloads';
+              }
+            }
+            renderDownloadCount(getDownloadCount());
+          </script>
         </div>
 
         <div class="product-window" aria-label="Civic Connect app preview">

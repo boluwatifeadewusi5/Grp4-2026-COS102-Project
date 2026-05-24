@@ -1,8 +1,8 @@
-# Beta 1.3 - Civic Connect
+# Beta 1.4 - Civic Connect
 
-Beta 1.3 is a Python Tkinter desktop app for civic collaboration between Casual Users, NGOs, and Government agencies. The app uses Postgres only for storage, so the same code can run against a hosted database online or a local Postgres server offline.
+Beta 1.4 is a Python Tkinter desktop app for civic collaboration between Casual Users, NGOs, and Government agencies. The app uses Postgres only for storage, so the same code can run against a hosted database online or a local Postgres server offline.
 
-See [beta-1.3.md](beta-1.3.md) for the latest background-loading, homepage stats, and heavier performance fixes.
+See [beta-1.4.md](beta-1.4.md) for the latest refresh, search, and Connect tab fixes.
 
 ## Run The App
 
@@ -41,16 +41,16 @@ CIVIC_CONNECT_LOCAL_DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/civic
 
 ## Refresh
 
-Tkinter screens do not update automatically when another user changes the database, so Beta 1.3 refreshes logged-in screens on a timer.
+Tkinter screens do not update automatically when another user changes the database. Beta 1.4 no longer rebuilds the active page on a timer; it only refreshes the notification count in the top bar.
 
-The default refresh interval is 5 seconds. You can set any value from 1 to 5 seconds:
+The default refresh interval is 15 seconds. You can set any value from 10 to 60 seconds:
 
 ```bash
-CIVIC_CONNECT_REFRESH_SECONDS=5
+CIVIC_CONNECT_REFRESH_SECONDS=15
 python main.py
 ```
 
-The app skips auto-refresh while a text field, text box, or dropdown has focus so it does not erase what a user is typing.
+Searches, forms, and scroll position are no longer wiped by automatic full-page refreshes.
 
 Slow hosted database queries are capped by default:
 
@@ -70,13 +70,15 @@ python main.py
 
 ## Features
 
+- Beta 1.4 changes auto-refresh to notification-count refresh only, fixes multi-word search, and adds a Casual Connect tab for following NGO/Government accounts.
 - Beta 1.3 adds background database loading, homepage live stats, and heavier lag reduction.
 - Postgres-only storage for local and hosted deployments.
-- Configurable 1-5 second auto-refresh for logged-in screens.
+- Configurable 10-60 second notification refresh for logged-in screens.
 - GitHub Pages-ready showcase/download website in `docs/`.
 - Local Iconify/Lucide icon assets in `rescources/`, rendered as PNGs for Tkinter.
 - Search posts by topic, body, or author.
 - Search suggested Casual Users.
+- Casual Users can search and follow NGO/Government public profiles from Connect.
 - Search discoverable NGO/Government partners.
 - Filter agreements by status and text.
 - Filter projects by status and text.
@@ -94,6 +96,7 @@ Casual Users:
 - Comment on posts
 - Add friends
 - Accept/reject friend requests
+- Follow NGO/Government profiles
 - Casual-only messaging
 - Notifications
 - Profile editing

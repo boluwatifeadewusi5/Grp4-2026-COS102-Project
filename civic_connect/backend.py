@@ -82,6 +82,20 @@ class CivicBackend:
     def _like(self, value: str) -> str:
         return f"%{value.strip()}%"
 
+    def _search_terms(self, value: str) -> List[str]:
+        return [term for term in re.split(r"\s+", value.strip()) if term]
+
+    def _search_sql(self, columns: List[str], search: str, params: List, prefix: str = " AND ") -> str:
+        terms = self._search_terms(search)
+        if not terms:
+            return ""
+        clauses = []
+        column_sql = " OR ".join([f"COALESCE({column}, '') ILIKE ?" for column in columns])
+        for term in terms:
+            clauses.append(f"({column_sql})")
+            params.extend([self._like(term)] * len(columns))
+        return f"{prefix}{' AND '.join(clauses)}"
+
     def _limit_value(self, limit: Optional[int], default: Optional[int] = None, maximum: int = 100) -> Optional[int]:
         if limit is None:
             return default
@@ -142,10 +156,7 @@ class CivicBackend:
         self.require_casual(viewer_id)
         params = []
         where = "WHERE u.role='casual'"
-        if search.strip():
-            like = self._like(search)
-            where += " AND (p.body ILIKE ? OR p.topic ILIKE ? OR u.full_name ILIKE ?)"
-            params.extend([like, like, like])
+        where += self._search_sql(["p.body", "p.topic", "u.full_name", "u.email"], search, params)
         params.append(viewer_id)
         posts = self.db.query(
             f"""
@@ -258,13 +269,15 @@ class CivicBackend:
         self.db.execute("UPDATE friendships SET status=? WHERE id=?", (status, friendship_id))
         self.notify(fr["requester_id"], "Friend request updated", f"Your friend request was {status}.")
 
-    def friends_and_requests(self, user_id: int, limit: Optional[int] = None) -> Dict[str, List[Dict]]:
+    def friends_and_requests(self, user_id: int, search: str = "", limit: Optional[int] = None) -> Dict[str, List[Dict]]:
         self.require_casual(user_id)
+        search_params: List = []
+        search_clause = self._search_sql(["u.full_name", "u.email", "u.location", "u.bio"], search, search_params)
         limit_value = self._limit_value(limit)
         limit_sql = " LIMIT ?" if limit_value else ""
-        friends_params = [user_id, user_id, user_id]
-        incoming_params = [user_id]
-        outgoing_params = [user_id]
+        friends_params = [user_id, user_id, user_id, *search_params]
+        incoming_params = [user_id, *search_params]
+        outgoing_params = [user_id, *search_params]
         if limit_value:
             friends_params.append(limit_value)
             incoming_params.append(limit_value)
@@ -275,25 +288,22 @@ class CivicBackend:
             FROM friendships f
             JOIN users u ON u.id = CASE WHEN f.requester_id=? THEN f.receiver_id ELSE f.requester_id END
             WHERE (f.requester_id=? OR f.receiver_id=?) AND f.status='accepted'
+            {search_clause}
             ORDER BY u.full_name
             {limit_sql}
             """, friends_params)
         incoming = self.db.query(
-            f"SELECT f.*, u.full_name, u.email FROM friendships f JOIN users u ON u.id=f.requester_id WHERE f.receiver_id=? AND f.status='pending' ORDER BY f.created_at DESC{limit_sql}",
+            f"SELECT f.*, u.full_name, u.email FROM friendships f JOIN users u ON u.id=f.requester_id WHERE f.receiver_id=? AND f.status='pending' {search_clause} ORDER BY f.created_at DESC{limit_sql}",
             incoming_params)
         outgoing = self.db.query(
-            f"SELECT f.*, u.full_name, u.email FROM friendships f JOIN users u ON u.id=f.receiver_id WHERE f.requester_id=? AND f.status='pending' ORDER BY f.created_at DESC{limit_sql}",
+            f"SELECT f.*, u.full_name, u.email FROM friendships f JOIN users u ON u.id=f.receiver_id WHERE f.requester_id=? AND f.status='pending' {search_clause} ORDER BY f.created_at DESC{limit_sql}",
             outgoing_params)
         return {"friends": friends, "incoming": incoming, "outgoing": outgoing}
 
     def suggested_casual_users(self, user_id: int, search: str = "") -> List[Dict]:
         self.require_casual(user_id)
         params = [user_id, user_id, user_id]
-        search_filter = ""
-        if search.strip():
-            like = self._like(search)
-            search_filter = " AND (u.full_name ILIKE ? OR u.email ILIKE ? OR u.location ILIKE ?)"
-            params.extend([like, like, like])
+        search_filter = self._search_sql(["u.full_name", "u.email", "u.location", "u.bio"], search, params)
         return self.db.query(
             f"""
             SELECT u.id, u.full_name, u.email, u.location, u.bio
@@ -310,6 +320,76 @@ class CivicBackend:
               {search_filter}
             ORDER BY u.full_name LIMIT 20
             """, params)
+
+    def follow_org(self, follower_id: int, following_id: int) -> int:
+        self.require_casual(follower_id)
+        target = self.user(following_id)
+        if target["role"] not in ("ngo", "government"):
+            raise PermissionError("Casual Users can only follow NGO and Government accounts.")
+        try:
+            follow_id = self.db.execute(
+                "INSERT INTO follows(follower_id, following_id) VALUES(?,?)",
+                (follower_id, following_id),
+            )
+            self.notify(following_id, "New follower", f"{self.user(follower_id)['full_name']} followed your public profile.")
+            return follow_id
+        except Exception as exc:
+            if "UNIQUE" in str(exc):
+                raise BackendError("You already follow that account.") from exc
+            raise
+
+    def unfollow_org(self, follower_id: int, following_id: int):
+        self.require_casual(follower_id)
+        self.db.execute("DELETE FROM follows WHERE follower_id=? AND following_id=?", (follower_id, following_id))
+
+    def connect_accounts(self, user_id: int, search: str = "", limit: Optional[int] = 60) -> Dict[str, List[Dict]]:
+        self.require_casual(user_id)
+        limit_value = self._limit_value(limit, default=60)
+        search_params: List = []
+        search_clause = self._search_sql(
+            ["u.full_name", "u.email", "u.organization_name", "u.location", "u.bio", "u.role"],
+            search,
+            search_params,
+        )
+        following_params = [user_id, *search_params, limit_value]
+        discover_params = [user_id, *search_params, limit_value]
+        select_sql = """
+            SELECT u.id, u.full_name, u.email, u.role, u.organization_name, u.location, u.bio, u.verified,
+                   COALESCE(fc.follower_count, 0) AS follower_count
+            FROM users u
+            LEFT JOIN (
+                SELECT following_id, COUNT(*) AS follower_count
+                FROM follows
+                GROUP BY following_id
+            ) fc ON fc.following_id=u.id
+        """
+        following = self.db.query(
+            f"""
+            {select_sql}
+            JOIN follows f ON f.following_id=u.id
+            WHERE f.follower_id=?
+              AND u.role IN ('ngo','government')
+              {search_clause}
+            ORDER BY f.created_at DESC, u.full_name
+            LIMIT ?
+            """,
+            following_params,
+        )
+        discover = self.db.query(
+            f"""
+            {select_sql}
+            WHERE u.role IN ('ngo','government')
+              AND NOT EXISTS (
+                  SELECT 1 FROM follows f
+                  WHERE f.follower_id=? AND f.following_id=u.id
+              )
+              {search_clause}
+            ORDER BY u.role, u.full_name
+            LIMIT ?
+            """,
+            discover_params,
+        )
+        return {"following": following, "discover": discover}
 
     # ---------- conversations ----------
     def _conversation_kind_and_permission(self, a: int, b: int) -> str:
@@ -428,12 +508,8 @@ class CivicBackend:
 
     def partners_and_requests(self, user_id: int, search: str = "", limit: Optional[int] = None) -> Dict[str, List[Dict]]:
         self.require_org(user_id)
-        search = search.strip()
-        like = self._like(search) if search else ""
-        search_clause = ""
-        if search:
-            search_clause = " AND (u.full_name ILIKE ? OR u.organization_name ILIKE ? OR u.location ILIKE ? OR u.bio ILIKE ? OR u.email ILIKE ?)"
-        search_params = [like, like, like, like, like] if search else []
+        search_params: List = []
+        search_clause = self._search_sql(["u.full_name", "u.organization_name", "u.location", "u.bio", "u.email", "u.role"], search, search_params)
         limit_value = self._limit_value(limit)
         limit_sql = " LIMIT ?" if limit_value else ""
         partners_params = [user_id, user_id, user_id, *search_params]
@@ -484,11 +560,7 @@ class CivicBackend:
         else:
             raise PermissionError("Only Government and NGO users can discover partners.")
         params = [role, user_id, user_id]
-        search_filter = ""
-        if search.strip():
-            like = self._like(search)
-            search_filter = " AND (u.full_name ILIKE ? OR u.organization_name ILIKE ? OR u.location ILIKE ? OR u.bio ILIKE ? OR u.email ILIKE ?)"
-            params.extend([like, like, like, like, like])
+        search_filter = self._search_sql(["u.full_name", "u.organization_name", "u.location", "u.bio", "u.email", "u.role"], search, params)
         limit_value = self._limit_value(limit, default=30)
         params.append(limit_value)
         return self.db.query(
@@ -528,10 +600,14 @@ class CivicBackend:
         if status.strip() and status.strip() != "all":
             filters.append("a.status=?")
             params.append(status.strip())
-        if search.strip():
-            like = self._like(search)
-            filters.append("(a.title ILIKE ? OR a.summary ILIKE ? OR g.full_name ILIKE ? OR n.full_name ILIKE ? OR g.organization_name ILIKE ? OR n.organization_name ILIKE ?)")
-            params.extend([like, like, like, like, like, like])
+        search_clause = self._search_sql(
+            ["a.title", "a.summary", "a.status", "g.full_name", "n.full_name", "g.organization_name", "n.organization_name"],
+            search,
+            params,
+            prefix="",
+        )
+        if search_clause:
+            filters.append(search_clause)
         where = " AND ".join(filters)
         limit_sql = ""
         if limit:
@@ -638,10 +714,9 @@ class CivicBackend:
         if status.strip() and status.strip() != "all":
             filters.append("p.status=?")
             params.append(status.strip())
-        if search.strip():
-            like = self._like(search)
-            filters.append("(p.title ILIKE ? OR p.focus_area ILIKE ? OR p.status ILIKE ? OR u.full_name ILIKE ?)")
-            params.extend([like, like, like, like])
+        search_clause = self._search_sql(["p.title", "p.focus_area", "p.status", "u.full_name"], search, params, prefix="")
+        if search_clause:
+            filters.append(search_clause)
         where = " AND ".join(filters)
         limit_sql = ""
         if limit:
@@ -672,11 +747,7 @@ class CivicBackend:
     def reports_for(self, user_id: int, search: str = "", limit: Optional[int] = None) -> List[Dict]:
         self.require_org(user_id)
         params = [user_id, user_id]
-        search_filter = ""
-        if search.strip():
-            like = self._like(search)
-            search_filter = " AND (r.title ILIKE ? OR r.body ILIKE ? OR p.title ILIKE ? OR u.full_name ILIKE ?)"
-            params.extend([like, like, like, like])
+        search_filter = self._search_sql(["r.title", "r.body", "p.title", "u.full_name"], search, params)
         limit_value = self._limit_value(limit)
         limit_sql = " LIMIT ?" if limit_value else ""
         if limit_value:
@@ -723,6 +794,8 @@ class CivicBackend:
             for post in self.feed(user_id):
                 if post["author_id"] == user_id:
                     writer.writerow(["post", post["topic"], post["body"], post["created_at"]])
+            for org in self.connect_accounts(user_id)["following"]:
+                writer.writerow(["following", org.get("organization_name") or org["full_name"], org["role"], ""])
             for note in self.notifications(user_id):
                 writer.writerow(["notification", note["title"], note["body"], note["created_at"]])
         else:
@@ -745,12 +818,13 @@ class CivicBackend:
                 SELECT
                     (SELECT COUNT(*) FROM posts WHERE author_id=?) AS posts,
                     (SELECT COUNT(*) FROM friendships WHERE (requester_id=? OR receiver_id=?) AND status='accepted') AS friends,
+                    (SELECT COUNT(*) FROM follows WHERE follower_id=?) AS following,
                     (SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0) AS notifications,
                     (SELECT COUNT(*) FROM conversations WHERE user_a=? OR user_b=?) AS messages
                 """,
-                (user_id, user_id, user_id, user_id, user_id, user_id),
+                (user_id, user_id, user_id, user_id, user_id, user_id, user_id),
             ) or {}
-            return {key: int(row.get(key) or 0) for key in ("posts", "friends", "notifications", "messages")}
+            return {key: int(row.get(key) or 0) for key in ("posts", "friends", "following", "notifications", "messages")}
         row = self.db.one(
             """
             SELECT

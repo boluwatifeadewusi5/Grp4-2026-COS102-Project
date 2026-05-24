@@ -1,6 +1,6 @@
-# Postgres Hosting Guide For Beta 1.3
+# Postgres Hosting Guide For Beta 1.4
 
-Beta 1.3 uses Postgres only. The Tkinter app still runs on Windows, while the database can be either:
+Beta 1.4 uses Postgres only. The Tkinter app still runs on Windows, while the database can be either:
 
 - Online: a hosted Postgres database such as Supabase or Neon.
 - Offline: a Postgres server installed on the same computer.
@@ -107,14 +107,14 @@ If the app cannot connect, check:
 
 ## 5. Refresh Interval
 
-Set the refresh interval from 1 to 5 seconds. The default is 5 seconds:
+Set the notification refresh interval from 10 to 60 seconds. The default is 15 seconds:
 
 ```powershell
-$env:CIVIC_CONNECT_REFRESH_SECONDS="5"
+$env:CIVIC_CONNECT_REFRESH_SECONDS="15"
 python main.py
 ```
 
-The refresh loop updates logged-in screens so another user's posts, messages, notifications, agreements, projects, and reports appear without restarting the app.
+The refresh loop updates only the notification count in the top bar. It no longer rebuilds the active screen, so searches and forms remain usable.
 
 If a hosted database is slow, the app protects the UI with a default query timeout:
 

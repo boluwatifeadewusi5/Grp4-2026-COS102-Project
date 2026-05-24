@@ -1,4 +1,4 @@
-# Beta 1.3 Documentation
+# Beta 1.4 Documentation
 
 This folder contains release notes, setup guides, and an optional GitHub Pages mirror.
 
@@ -6,6 +6,7 @@ The **deployed website** is in **`Civic connect webpage/`** (Vercel). See [VERCE
 
 ## Files
 
+- `beta-1.4.md`: bug report and fix notes for lighter refreshes, working search, and the Casual Connect tab.
 - `beta-1.3.md`: bug report and fix notes for the background performance worker, homepage stats, and heavier lag fixes.
 - `beta-1.2.md`: bug report and fix notes for responsiveness, resizing, branding, and search.
 - `BETA_1.1.md`: release notes for the Postgres messaging, performance, refresh, and config fixes.

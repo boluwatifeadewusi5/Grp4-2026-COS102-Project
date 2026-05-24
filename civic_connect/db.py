@@ -57,6 +57,14 @@ CREATE TABLE IF NOT EXISTS likes (
     PRIMARY KEY(user_id, post_id)
 );
 
+CREATE TABLE IF NOT EXISTS follows (
+    id SERIAL PRIMARY KEY,
+    follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    following_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(follower_id, following_id)
+);
+
 CREATE TABLE IF NOT EXISTS partner_requests (
     id SERIAL PRIMARY KEY,
     requester_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -151,6 +159,8 @@ CREATE INDEX IF NOT EXISTS idx_posts_author_created ON posts(author_id, created_
 CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id);
 CREATE INDEX IF NOT EXISTS idx_comments_post_created ON comments(post_id, created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_likes_post ON likes(post_id);
+CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_created ON messages(conversation_id, created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_friendships_requester_status ON friendships(requester_id, status);
@@ -168,7 +178,7 @@ CREATE INDEX IF NOT EXISTS idx_users_role_org ON users(role, organization_name);
 """
 
 INSERT_ID_TABLES = {
-    "users", "friendships", "posts", "comments", "partner_requests",
+    "users", "friendships", "posts", "comments", "follows", "partner_requests",
     "conversations", "messages", "agreements", "agreement_events",
     "documents", "projects", "reports", "notifications",
 }

@@ -1,33 +1,39 @@
-# Vercel deployment — Civic Connect website only
+# Vercel — deploy `Civic connect webpage` only
 
-Vercel hosts the **static webpage** in `docs/`. It does **not** run the Tkinter desktop app.
+The live site is **`Civic connect webpage/`**. It does **not** run the Tkinter desktop app.
 
 ## Required Vercel settings
 
 | Setting | Value |
 |--------|--------|
-| Root Directory | **`docs`** |
-| Framework Preset | Other |
-| Build Command | *(empty)* |
-| Install Command | *(empty)* |
-| Output Directory | *(empty when Root Directory is `docs`)* |
+| **Root Directory** | `Civic connect webpage` |
+| **Framework Preset** | Other |
+| **Build Command** | *(empty)* |
+| **Install Command** | *(empty)* |
+| **Output Directory** | *(empty — files are at the root of this folder)* |
 
-## Why `app/` was renamed to `desktop/`
+If you import from the **repository root** instead, the root `vercel.json` sets `outputDirectory` to `Civic connect webpage` — but setting **Root Directory** in the Vercel dashboard is still preferred.
 
-Vercel’s Python builder looks specifically for `app/main.py` as a web API entrypoint. This project’s launcher is a **desktop GUI**, not Flask/FastAPI. Renaming `app/` → `desktop/` removes that false match.
+## After changing settings
+
+1. Commit and push `index.html`, `styles.css`, `vercel.json`, and `.nojekyll` in `Civic connect webpage/`.
+2. In Vercel → **Deployments** → **Redeploy** (clear build cache if you still see 404).
+
+## URLs that should work
+
+| URL | File |
+|-----|------|
+| `/` | `index.html` |
+| `/styles.css` | `styles.css` |
+
+The **Download Windows EXE** button links to the latest GitHub Release build.
 
 ## If the build still fails
 
-1. Confirm **Root Directory** is `docs`, not `.`
-2. Redeploy after pushing the latest `vercel.json` and `.vercelignore`
-3. In the failed deployment, check that no step runs `pip install` or Python functions
+- **Root Directory** must match the folder name exactly: `Civic connect webpage` (including spaces).
+- Do **not** set Root Directory to `docs` unless you intentionally switch hosts.
+- `desktop/main.py` is excluded via `.vercelignore` so Vercel does not treat the repo as a Python web app.
 
-## What gets deployed
+## Desktop app
 
-Only static assets from `docs/`:
-
-- `index.html`
-- `styles.css`
-- `.nojekyll`
-
-The EXE is distributed via **GitHub Releases**, linked from the download button.
+Ship `CivicConnect.exe` via **GitHub Releases**; the landing page only links to it.

@@ -107,15 +107,13 @@ Useful resource:
 
 ## 4. Add A Free Landing Page
 
-The `docs/` folder contains a GitHub Pages-ready showcase website.
+The `Civic connect webpage/` folder contains the public landing site (Vercel).
 
 Before publishing:
 
-1. Open `docs/index.html`.
-2. Replace every `YOUR_USERNAME/YOUR_REPOSITORY` value with your real GitHub repository path.
-3. Push the repository to GitHub.
-4. Open `Settings > Pages`.
-5. Set the publishing source to the `main` branch and `/docs` folder.
+1. Open `Civic connect webpage/index.html` and confirm the GitHub Releases download URL matches your repository.
+2. Push the repository to GitHub.
+3. On Vercel, set **Root Directory** to `Civic connect webpage` (see `VERCEL.md`).
 
 The site showcases the app, explains cloud data mode, and links to the latest release executable.
 
@@ -137,7 +135,7 @@ Good free options while keeping Tkinter:
 Not recommended if you must keep the same Tkinter UI:
 
 - PythonAnywhere, Render, Railway, and Netlify as the primary app host. These host web apps, not desktop GUI windows.
-- Vercel for the **Tkinter window itself** — use Vercel only for the static site in `docs/` (see `VERCEL.md`).
+- Vercel for the **Tkinter window itself** — use Vercel only for the static site in `Civic connect webpage/` (see `VERCEL.md`).
 - Replit-style browser IDEs for a public app. Tkinter GUI support is inconsistent and not a true deployment.
 
 If you later need a real browser app, keep the backend and database concepts, then rebuild the UI with Flask/FastAPI plus HTML, or with a frontend framework.

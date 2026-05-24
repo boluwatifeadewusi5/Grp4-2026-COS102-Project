@@ -4,7 +4,7 @@ civic_connect/
 rescources/
 build_windows.bat
 PACKAGING_AND_HOSTING.md
-Civic connect webpage/
+docs/
 
 # Python / tooling
 **/*.py

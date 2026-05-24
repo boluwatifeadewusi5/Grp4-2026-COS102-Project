@@ -11,7 +11,7 @@ from .theme import T, FONT
 from .ui import clear, label, icon_label, button, entry, get_entry, text_box, card, tag, Scroll, Modal, toast, error
 
 APP_NAME = "Civic Connect"
-APP_VERSION = "Beta 1.4"
+APP_VERSION = "Beta 1.4.5"
 VIEW_LIMIT = 80
 COMPACT_VIEW_LIMIT = 60
 
@@ -24,8 +24,10 @@ class CivicConnectApp(tk.Tk):
         self.configure(bg=T.bg)
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         gc.set_threshold(900, 15, 15)
-        self.backend = CivicBackend()
         self.performance = PerformanceManager(self)
+        self.backend: Optional[CivicBackend] = None
+        self.backend_connecting = False
+        self.backend_error = ""
         self.current_user: Optional[Dict] = None
         self.selected_conversation_id: Optional[int] = None
         self.selected_agreement_id: Optional[int] = None
@@ -56,7 +58,8 @@ class CivicConnectApp(tk.Tk):
         self.root.pack_propagate(False)
         for sequence in ("<Button>", "<KeyPress>"):
             self.bind_all(sequence, self.mark_user_activity, add="+")
-        self.show_landing()
+        self.show_database_loading()
+        self.after(100, self.connect_backend)
         self.schedule_refresh()
 
     # ---------- core layout ----------
@@ -72,6 +75,27 @@ class CivicConnectApp(tk.Tk):
 
     def mark_user_activity(self, _event=None):
         self.last_interaction_at = time.monotonic()
+
+    def connect_backend(self):
+        if self.backend_connecting:
+            return
+        self.backend_connecting = True
+        self.backend_error = ""
+        self.show_database_loading()
+
+        def done(backend):
+            self.backend = backend
+            self.backend_connecting = False
+            self.backend_error = ""
+            self.show_landing()
+
+        def failed(exc):
+            self.backend = None
+            self.backend_connecting = False
+            self.backend_error = str(exc)
+            self.show_database_setup(self.backend_error)
+
+        self.performance.run(CivicBackend, done, failed)
 
     def next_view_token(self) -> int:
         self.view_token += 1
@@ -128,7 +152,8 @@ class CivicConnectApp(tk.Tk):
             except tk.TclError:
                 pass
         try:
-            self.backend.db.close()
+            if self.backend:
+                self.backend.db.close()
         except Exception:
             pass
         self.performance.shutdown()
@@ -179,7 +204,7 @@ class CivicConnectApp(tk.Tk):
         self.refresh_job = self.after(self.refresh_seconds * 1000, self.auto_refresh)
 
     def should_skip_refresh(self) -> bool:
-        if not self.current_user or not self.active_view:
+        if not self.backend or not self.current_user or not self.active_view:
             return True
         if self.pending_view_load:
             return True
@@ -192,7 +217,7 @@ class CivicConnectApp(tk.Tk):
 
     def auto_refresh(self):
         self.refresh_job = None
-        if not self.current_user or self.refreshing or self.pending_view_load:
+        if not self.backend or not self.current_user or self.refreshing or self.pending_view_load:
             self.schedule_refresh()
             return
         self.refreshing = True
@@ -260,14 +285,54 @@ class CivicConnectApp(tk.Tk):
         self.show_landing()
 
     def route_home(self):
+        if not self.backend:
+            self.show_database_setup(self.backend_error)
+            return
         if not self.current_user:
             self.show_landing(); return
         role = self.current_user["role"]
         if role == "casual": self.show_casual_home()
         else: self.show_org_home()
 
+    def show_database_loading(self):
+        self.cancel_pending_view()
+        self.set_active_view(None)
+        self.reset()
+        main=tk.Frame(self.root,bg=T.bg,padx=40,pady=40); main.pack(fill="both",expand=True)
+        o,i=card(main,padx=36,pady=32); o.place(relx=.5,rely=.43,anchor="center",width=560)
+        icon_label(i,"cloud","gold",44,T.panel).pack(anchor="center")
+        label(i,APP_NAME,23,T.gold,T.panel,"bold",anchor="center").pack(fill="x",pady=(4,8))
+        label(i,"Connecting to Postgres...",12,T.text,T.panel,"bold",anchor="center").pack(fill="x")
+        label(i,"The window will stay responsive while the database connection is tested.",10,T.muted,T.panel,wrap=460,anchor="center",justify="center").pack(fill="x",pady=(8,0))
+
+    def show_database_setup(self, message=""):
+        self.cancel_pending_view()
+        self.set_active_view(None)
+        self.reset()
+        main=tk.Frame(self.root,bg=T.bg,padx=40,pady=40); main.pack(fill="both",expand=True)
+        o,i=card(main,padx=36,pady=30); o.place(relx=.5,rely=.45,anchor="center",width=680)
+        icon_label(i,"shield-check","gold",44,T.panel).pack(anchor="center")
+        label(i,"DATABASE CONNECTION NEEDED",21,T.gold,T.panel,"bold",anchor="center").pack(fill="x",pady=(4,8))
+        label(i,"Civic Connect opened successfully, but Postgres is not reachable yet.",11,T.text,T.panel,"bold",anchor="center").pack(fill="x")
+        if message:
+            label(i,message,9,T.warning,T.panel,wrap=580,anchor="center",justify="center").pack(fill="x",pady=(10,8))
+        help_text = (
+            "Online: check CIVIC_CONNECT_DATABASE_URL or config.json and make sure the hosted database allows your network.\n"
+            "Offline: start local Postgres and create the civic_connect database, or set CIVIC_CONNECT_LOCAL_DATABASE_URL."
+        )
+        label(i,help_text,10,T.muted,T.panel,wrap=580,anchor="center",justify="center").pack(fill="x",pady=8)
+        row=tk.Frame(i,bg=T.panel); row.pack(pady=(12,0))
+        button(row,"RETRY CONNECTION",self.connect_backend,"primary",width=18,icon="refresh-cw").pack(side="left",padx=5)
+        button(row,"QUIT",self.on_close,"outline",width=10,icon="x").pack(side="left",padx=5)
+
     # ---------- public ----------
     def show_landing(self):
+        if not self.backend:
+            if self.backend_connecting:
+                self.show_database_loading()
+            else:
+                self.show_database_setup(self.backend_error)
+            return
         self.set_active_view(None)
         public = self.current_user is None
         self.reset(); self.nav(public=public)
@@ -367,6 +432,9 @@ class CivicConnectApp(tk.Tk):
         return o
 
     def show_login(self):
+        if not self.backend:
+            self.show_database_setup(self.backend_error)
+            return
         if self.current_user:
             self.route_home()
             return
@@ -392,6 +460,9 @@ class CivicConnectApp(tk.Tk):
         label(bottom,"No account? ",9,T.muted,T.panel).pack(side="left"); button(bottom,"Sign up",self.show_signup,"ghost",pady=2).pack(side="left")
 
     def show_signup(self):
+        if not self.backend:
+            self.show_database_setup(self.backend_error)
+            return
         if self.current_user:
             self.route_home()
             return

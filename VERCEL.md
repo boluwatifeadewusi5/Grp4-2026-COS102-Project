@@ -32,7 +32,7 @@ The **Download Windows EXE** button links to the latest GitHub Release build.
 
 - **Root Directory** must match the folder name exactly: `Civic connect webpage` (including spaces).
 - Do **not** set Root Directory to `docs` unless you intentionally switch hosts.
-- `desktop/main.py` is excluded via `.vercelignore` so Vercel does not treat the repo as a Python web app.
+- Root `main.py` and the desktop Python package are excluded via `.vercelignore` so Vercel does not treat the repo as a Python web app.
 
 ## Desktop app
 

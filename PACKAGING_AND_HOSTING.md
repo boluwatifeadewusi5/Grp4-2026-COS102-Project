@@ -7,8 +7,9 @@ This project is still a Tkinter desktop app. The practical free online setup is 
 The desktop app supports two database modes:
 
 ```text
-No environment variable        -> local data file
-CIVIC_CONNECT_DATABASE_URL set -> hosted Postgres
+CIVIC_CONNECT_DATABASE_URL set       -> hosted Postgres
+CIVIC_CONNECT_LOCAL_DATABASE_URL set -> custom local Postgres
+No database variable set             -> postgresql://postgres:postgres@localhost:5432/civic_connect
 ```
 
 Recommended free prototype providers:
@@ -20,17 +21,17 @@ Set the connection string before running:
 
 ```bash
 set CIVIC_CONNECT_DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
-python desktop/main.py
+python main.py
 ```
 
 For PowerShell:
 
 ```powershell
 $env:CIVIC_CONNECT_DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
-python desktop/main.py
+python main.py
 ```
 
-The app creates the tables automatically and adds starter records only when the `users` table is empty.
+The app creates the tables automatically. If the database is unreachable, Beta 1.4.5 shows a setup/retry screen instead of crashing.
 
 Security note: direct database mode is fine for a controlled class presentation, but the connection string can be extracted from a packaged `.exe`. For a public production release, deploy a small API service between the desktop app and the database.
 
@@ -62,7 +63,7 @@ dist/CivicConnect.exe
 The build script uses PyInstaller with:
 
 ```bash
-pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" desktop/main.py
+pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" main.py
 ```
 
 Useful resource:

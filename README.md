@@ -5,10 +5,14 @@ Civic Connect is a pure Python desktop app with a functional data layer. It keep
 ## Run
 
 ```bash
-python desktop/main.py
+python main.py
 ```
 
-No third-party packages are required for local desktop use. The app uses Python standard library modules including Tkinter, hashlib, secrets, pathlib, csv, and dataclasses.
+Install dependencies first:
+
+```bash
+python -m pip install -r requirements.txt
+```
 
 ## Repository layout
 
@@ -16,7 +20,8 @@ No third-party packages are required for local desktop use. The app uses Python 
 |------|---------|
 | `Civic connect webpage/` | **Deploy this** — Vercel landing page and EXE download link |
 | `docs/` | Optional GitHub Pages mirror (not used for Vercel) |
-| `desktop/` | Desktop app entry (`desktop/main.py`) |
+| `main.py` | Desktop app entrypoint |
+| `civic_connect/` | Tkinter app, backend, Postgres database layer, icons, and UI helpers |
 
 ## Publish the website
 
@@ -44,9 +49,7 @@ No third-party packages are required for local desktop use. The app uses Python 
 
 ## Data Storage
 
-The app creates its local data file automatically in the user's app data folder.
-
-If you already ran the older prototype, reset the database before testing the project-document foreign key and new seeded workflow.
+The app uses Postgres only. Use a hosted Postgres URL for shared online data, or install local Postgres for offline use.
 
 ## Hosted Database Mode
 
@@ -60,10 +63,10 @@ Install cloud database support before running or packaging:
 
 ```bash
 python -m pip install -r requirements.txt
-python desktop/main.py
+python main.py
 ```
 
-The app will create its tables and starter records if the hosted `users` table is empty.
+The app opens a setup/retry screen instead of crashing if the configured database is unreachable.
 
 Important: direct database mode is good for class presentations and controlled prototypes. For a public production app, put a small API between the `.exe` and database so the database password is not bundled into the executable.
 
@@ -85,7 +88,7 @@ dist/CivicConnect.exe
 You can also run PyInstaller directly:
 
 ```bash
-pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" desktop/main.py
+pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" main.py
 ```
 
 ## Free Distribution And Hosting
@@ -112,7 +115,7 @@ The Tkinter app is **not** deployed to Vercel — only the static landing page. 
 ## Project Structure
 
 ```text
-desktop/main.py
+main.py
 README.md
 VERCEL.md
 PACKAGING_AND_HOSTING.md

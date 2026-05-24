@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Beta 1.4 is a Python Tkinter desktop app for community posts, NGO/Government partnerships, follows, agreements, projects, reports, messaging, and Postgres-backed shared data.">
-    <title>Beta 1.4 - Civic Connect</title>
+    <meta name="description" content="Beta 1.4.5 is a Python Tkinter desktop app for community posts, NGO/Government partnerships, follows, agreements, projects, reports, messaging, and Postgres-backed shared data.">
+    <title>Beta 1.4.5 - Civic Connect</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -95,21 +95,21 @@
 
       <section class="band">
         <div class="section-head">
-          <h2>Beta 1.4 Updates</h2>
-          <p>Focused fixes for refresh behavior, search reliability, and the new Casual Connect tab.</p>
+          <h2>Beta 1.4.5 Updates</h2>
+          <p>Focused fixes for database startup, launch stability, and packaging from the root entrypoint.</p>
         </div>
         <div class="grid">
           <article class="card">
-            <h3>Lighter Refresh</h3>
-            <p>Auto-refresh now updates only the notification count instead of rebuilding the current screen.</p>
+            <h3>Safer Startup</h3>
+            <p>The app opens a database setup/retry screen when hosted or local Postgres cannot be reached.</p>
           </article>
           <article class="card">
-            <h3>Connect Tab</h3>
-            <p>Casual Users can search and follow only NGO and Government public profiles.</p>
+            <h3>Root Entrypoint</h3>
+            <p>The packaged app now builds from root <code>main.py</code> instead of the old desktop folder path.</p>
           </article>
           <article class="card">
-            <h3>Search Fixes</h3>
-            <p>Search now handles multi-word queries across names, organizations, roles, location, and profile text.</p>
+            <h3>Configurable Timeout</h3>
+            <p>Connection attempts use a short configurable timeout so the interface does not die on slow networks.</p>
           </article>
         </div>
       </section>

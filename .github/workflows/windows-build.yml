@@ -25,7 +25,7 @@ jobs:
           python -m pip install -r requirements-dev.txt
 
       - name: Build executable
-        run: pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" desktop/main.py
+        run: pyinstaller --clean --noconfirm --onefile --windowed --name CivicConnect --add-data "rescources;rescources" main.py
 
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4

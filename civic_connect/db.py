@@ -8,6 +8,7 @@ from typing import Iterable, Optional
 DATABASE_ENV = "CIVIC_CONNECT_DATABASE_URL"
 LOCAL_DATABASE_ENV = "CIVIC_CONNECT_LOCAL_DATABASE_URL"
 QUERY_TIMEOUT_ENV = "CIVIC_CONNECT_QUERY_TIMEOUT_MS"
+CONNECT_TIMEOUT_ENV = "CIVIC_CONNECT_CONNECT_TIMEOUT_SECONDS"
 DEFAULT_LOCAL_POSTGRES_URL = "postgresql://postgres:postgres@localhost:5432/civic_connect"
 
 POSTGRES_SCHEMA = """
@@ -255,7 +256,12 @@ class Database:
             return self._conn
 
         try:
-            self._conn = psycopg.connect(self.url, row_factory=dict_row, connect_timeout=8)
+            try:
+                connect_timeout = int(os.environ.get(CONNECT_TIMEOUT_ENV, "5"))
+            except ValueError:
+                connect_timeout = 5
+            connect_timeout = max(2, min(connect_timeout, 30))
+            self._conn = psycopg.connect(self.url, row_factory=dict_row, connect_timeout=connect_timeout)
             try:
                 timeout_ms = int(os.environ.get(QUERY_TIMEOUT_ENV, "5000"))
             except ValueError:
@@ -268,9 +274,10 @@ class Database:
             self._conn = None
             target = "hosted Postgres" if self.mode == "hosted" else "local Postgres"
             raise RuntimeError(
-                f"Could not connect to {target}. Set {DATABASE_ENV} for online Postgres, "
-                f"or start local Postgres and create a civic_connect database at "
-                f"{DEFAULT_LOCAL_POSTGRES_URL}."
+                f"Could not connect to {target}. If you are using hosted Postgres, check {DATABASE_ENV} "
+                f"or config.json and confirm the database allows this network. For offline use, start "
+                f"local Postgres and create a civic_connect database at {DEFAULT_LOCAL_POSTGRES_URL}. "
+                f"Connection detail: {exc}"
             ) from exc
 
     def _convert_sql(self, sql: str) -> str:

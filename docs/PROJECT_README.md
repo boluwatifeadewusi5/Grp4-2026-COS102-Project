@@ -1,8 +1,8 @@
-# Beta 1.4 - Civic Connect
+# Beta 1.4.5 - Civic Connect
 
-Beta 1.4 is a Python Tkinter desktop app for civic collaboration between Casual Users, NGOs, and Government agencies. The app uses Postgres only for storage, so the same code can run against a hosted database online or a local Postgres server offline.
+Beta 1.4.5 is a Python Tkinter desktop app for civic collaboration between Casual Users, NGOs, and Government agencies. The app uses Postgres only for storage, so the same code can run against a hosted database online or a local Postgres server offline.
 
-See [beta-1.4.md](beta-1.4.md) for the latest refresh, search, and Connect tab fixes.
+See [beta-1.4.5.md](beta-1.4.5.md) for the latest database startup and launch stability fixes.
 
 ## Run The App
 
@@ -41,7 +41,7 @@ CIVIC_CONNECT_LOCAL_DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/civic
 
 ## Refresh
 
-Tkinter screens do not update automatically when another user changes the database. Beta 1.4 no longer rebuilds the active page on a timer; it only refreshes the notification count in the top bar.
+Tkinter screens do not update automatically when another user changes the database. Beta 1.4.5 no longer rebuilds the active page on a timer; it only refreshes the notification count in the top bar.
 
 The default refresh interval is 15 seconds. You can set any value from 10 to 60 seconds:
 
@@ -58,6 +58,12 @@ Slow hosted database queries are capped by default:
 CIVIC_CONNECT_QUERY_TIMEOUT_MS=5000
 ```
 
+Connection attempts default to 5 seconds. If the database is unreachable, the app opens a setup/retry screen instead of crashing:
+
+```bash
+CIVIC_CONNECT_CONNECT_TIMEOUT_SECONDS=5
+```
+
 ## Optional Starter Data
 
 Fresh databases do not create sample logins automatically. To load starter records during development, set both values before launching:
@@ -70,6 +76,7 @@ python main.py
 
 ## Features
 
+- Beta 1.4.5 opens even when Postgres times out, moves the desktop entrypoint to root `main.py`, and updates packaging.
 - Beta 1.4 changes auto-refresh to notification-count refresh only, fixes multi-word search, and adds a Casual Connect tab for following NGO/Government accounts.
 - Beta 1.3 adds background database loading, homepage live stats, and heavier lag reduction.
 - Postgres-only storage for local and hosted deployments.

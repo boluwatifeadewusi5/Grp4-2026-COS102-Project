@@ -1,6 +1,6 @@
-# Postgres Hosting Guide For Beta 1.4
+# Postgres Hosting Guide For Beta 1.4.5
 
-Beta 1.4 uses Postgres only. The Tkinter app still runs on Windows, while the database can be either:
+Beta 1.4.5 uses Postgres only. The Tkinter app still runs on Windows, while the database can be either:
 
 - Online: a hosted Postgres database such as Supabase or Neon.
 - Offline: a Postgres server installed on the same computer.
@@ -120,6 +120,13 @@ If a hosted database is slow, the app protects the UI with a default query timeo
 
 ```powershell
 $env:CIVIC_CONNECT_QUERY_TIMEOUT_MS="5000"
+python main.py
+```
+
+Connection attempts default to 5 seconds. If the database is unreachable, the app opens a retry/setup screen instead of crashing:
+
+```powershell
+$env:CIVIC_CONNECT_CONNECT_TIMEOUT_SECONDS="5"
 python main.py
 ```
 

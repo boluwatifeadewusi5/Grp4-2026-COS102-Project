@@ -3,13 +3,14 @@ from contextlib import contextmanager
 import json
 from pathlib import Path
 from threading import RLock
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional, Tuple
 
 DATABASE_ENV = "CIVIC_CONNECT_DATABASE_URL"
 LOCAL_DATABASE_ENV = "CIVIC_CONNECT_LOCAL_DATABASE_URL"
 QUERY_TIMEOUT_ENV = "CIVIC_CONNECT_QUERY_TIMEOUT_MS"
 CONNECT_TIMEOUT_ENV = "CIVIC_CONNECT_CONNECT_TIMEOUT_SECONDS"
 DEFAULT_LOCAL_POSTGRES_URL = "postgresql://postgres:postgres@localhost:5432/civic_connect"
+RECOVERY_LOCAL_POSTGRES_URL = "postgresql://postgres@127.0.0.1:55432/civic_connect"
 
 POSTGRES_SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -184,11 +185,7 @@ INSERT_ID_TABLES = {
     "documents", "projects", "reports", "notifications",
 }
 
-def get_config_database_url() -> Optional[str]:
-    env_url = os.environ.get(DATABASE_ENV)
-    if env_url:
-        return env_url
-
+def get_config_value(key: str) -> Optional[str]:
     possible_paths = [
         Path("config.json"),
         Path(__file__).resolve().parent.parent / "config.json",
@@ -196,30 +193,70 @@ def get_config_database_url() -> Optional[str]:
 
     for path in possible_paths:
         if path.exists():
-            with open(path, "r", encoding="utf-8") as file:
-                config = json.load(file)
+            try:
+                with open(path, "r", encoding="utf-8-sig") as file:
+                    config = json.load(file)
+            except (OSError, json.JSONDecodeError):
+                continue
 
-            db_url = config.get(DATABASE_ENV) or config.get("CIVIC_CONNECT_DATABASE_URL")
-            if db_url:
-                return db_url
+            value = config.get(key)
+            if value:
+                return str(value).strip()
 
     return None
 
+
+def get_config_database_url() -> Optional[str]:
+    env_url = os.environ.get(DATABASE_ENV)
+    if env_url:
+        return env_url.strip()
+
+    return get_config_value(DATABASE_ENV)
+
+
+def connection_mode(url: str) -> str:
+    if url and "localhost" not in url and "127.0.0.1" not in url:
+        return "hosted"
+    return "local"
+
+
+def mask_database_url(url: str) -> str:
+    if "://" not in url or "@" not in url:
+        return url
+    scheme, rest = url.split("://", 1)
+    auth, host = rest.split("@", 1)
+    if ":" not in auth:
+        return url
+    user = auth.split(":", 1)[0]
+    return f"{scheme}://{user}:****@{host}"
+
+
+def connection_candidates(url: Optional[str] = None) -> List[str]:
+    candidates: List[str] = []
+
+    def add(candidate: Optional[str]):
+        if not candidate:
+            return
+        candidate = candidate.strip()
+        if candidate and candidate not in candidates:
+            candidates.append(candidate)
+
+    add(url)
+    add(os.environ.get(DATABASE_ENV))
+    add(get_config_value(DATABASE_ENV))
+    add(os.environ.get(LOCAL_DATABASE_ENV))
+    add(get_config_value(LOCAL_DATABASE_ENV))
+    add(DEFAULT_LOCAL_POSTGRES_URL)
+    add(RECOVERY_LOCAL_POSTGRES_URL)
+    return candidates
+
+
 class Database:
     def __init__(self, url: Optional[str] = None):
-        configured_url = (
-            url
-            or get_config_database_url()
-            or os.environ.get(LOCAL_DATABASE_ENV)
-        )
-
-        self.url = configured_url or DEFAULT_LOCAL_POSTGRES_URL
-
-        if self.url and "localhost" not in self.url and "127.0.0.1" not in self.url:
-            self.mode = "hosted"
-        else:
-            self.mode = "local"
-
+        self.urls = connection_candidates(url)
+        self.url = self.urls[0]
+        self.mode = connection_mode(self.url)
+        self.last_connection_errors: List[Tuple[str, str]] = []
         self._conn = None
         self._lock = RLock()
         self.initialize()
@@ -256,29 +293,42 @@ class Database:
             return self._conn
 
         try:
+            connect_timeout = int(os.environ.get(CONNECT_TIMEOUT_ENV, "5"))
+        except ValueError:
+            connect_timeout = 5
+        connect_timeout = max(2, min(connect_timeout, 30))
+
+        try:
+            timeout_ms = int(os.environ.get(QUERY_TIMEOUT_ENV, "5000"))
+        except ValueError:
+            timeout_ms = 5000
+
+        self.last_connection_errors = []
+        last_error = None
+        for index, url in enumerate(list(self.urls)):
+            self.url = url
+            self.mode = connection_mode(url)
             try:
-                connect_timeout = int(os.environ.get(CONNECT_TIMEOUT_ENV, "5"))
-            except ValueError:
-                connect_timeout = 5
-            connect_timeout = max(2, min(connect_timeout, 30))
-            self._conn = psycopg.connect(self.url, row_factory=dict_row, connect_timeout=connect_timeout)
-            try:
-                timeout_ms = int(os.environ.get(QUERY_TIMEOUT_ENV, "5000"))
-            except ValueError:
-                timeout_ms = 5000
-            if timeout_ms > 0:
-                timeout_ms = max(1000, min(timeout_ms, 60000))
-                self._conn.execute(f"SET statement_timeout = {timeout_ms}")
-            return self._conn
-        except psycopg.OperationalError as exc:
-            self._conn = None
-            target = "hosted Postgres" if self.mode == "hosted" else "local Postgres"
-            raise RuntimeError(
-                f"Could not connect to {target}. If you are using hosted Postgres, check {DATABASE_ENV} "
-                f"or config.json and confirm the database allows this network. For offline use, start "
-                f"local Postgres and create a civic_connect database at {DEFAULT_LOCAL_POSTGRES_URL}. "
-                f"Connection detail: {exc}"
-            ) from exc
+                self._conn = psycopg.connect(url, row_factory=dict_row, connect_timeout=connect_timeout)
+                if timeout_ms > 0:
+                    timeout_ms = max(1000, min(timeout_ms, 60000))
+                    self._conn.execute(f"SET statement_timeout = {timeout_ms}")
+                if index:
+                    self.urls.insert(0, self.urls.pop(index))
+                return self._conn
+            except psycopg.OperationalError as exc:
+                self._conn = None
+                last_error = exc
+                self.last_connection_errors.append((mask_database_url(url), str(exc)))
+
+        attempted = "; ".join(url for url, _message in self.last_connection_errors)
+        details = self.last_connection_errors[-1][1] if self.last_connection_errors else str(last_error)
+        raise RuntimeError(
+            "Could not connect to any configured Postgres database. "
+            f"Tried: {attempted}. "
+            f"Set {DATABASE_ENV} for hosted Postgres, or run scripts/start_local_postgres.ps1 for offline mode. "
+            f"Connection detail: {details}"
+        ) from last_error
 
     def _convert_sql(self, sql: str) -> str:
         return sql.replace("?", "%s")

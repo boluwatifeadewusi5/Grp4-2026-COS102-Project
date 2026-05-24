@@ -6,6 +6,7 @@ dist/
 *.spec
 *.log
 .env
+.local-postgres/
 config.json
 civic_connect/config.json
 *.env

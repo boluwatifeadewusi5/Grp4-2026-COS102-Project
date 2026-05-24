@@ -1,3 +1,4 @@
 {
-  "CIVIC_CONNECT_DATABASE_URL": "postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+  "CIVIC_CONNECT_DATABASE_URL": "",
+  "CIVIC_CONNECT_LOCAL_DATABASE_URL": "postgresql://postgres@127.0.0.1:55432/civic_connect"
 }

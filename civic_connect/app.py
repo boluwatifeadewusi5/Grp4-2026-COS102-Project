@@ -11,7 +11,7 @@ from .theme import T, FONT
 from .ui import clear, label, icon_label, button, entry, get_entry, text_box, card, tag, Scroll, Modal, toast, error
 
 APP_NAME = "Civic Connect"
-APP_VERSION = "Beta 1.4.5"
+APP_VERSION = "Beta 1.4.6"
 VIEW_LIMIT = 80
 COMPACT_VIEW_LIMIT = 60
 
@@ -318,7 +318,7 @@ class CivicConnectApp(tk.Tk):
             label(i,message,9,T.warning,T.panel,wrap=580,anchor="center",justify="center").pack(fill="x",pady=(10,8))
         help_text = (
             "Online: check CIVIC_CONNECT_DATABASE_URL or config.json and make sure the hosted database allows your network.\n"
-            "Offline: start local Postgres and create the civic_connect database, or set CIVIC_CONNECT_LOCAL_DATABASE_URL."
+            "Offline: run scripts/start_local_postgres.ps1, or set CIVIC_CONNECT_LOCAL_DATABASE_URL."
         )
         label(i,help_text,10,T.muted,T.panel,wrap=580,anchor="center",justify="center").pack(fill="x",pady=8)
         row=tk.Frame(i,bg=T.panel); row.pack(pady=(12,0))

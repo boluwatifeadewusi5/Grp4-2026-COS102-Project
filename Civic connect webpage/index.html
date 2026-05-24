@@ -3,32 +3,32 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Civic Connect is a Python Tkinter desktop app for community posts, NGO/Government partnerships, agreements, projects, reports, messaging, and cloud-ready shared data.">
-    <title>Civic Connect - Desktop Prototype</title>
+    <meta name="description" content="Beta 1.3 is a Python Tkinter desktop app for community posts, NGO/Government partnerships, agreements, projects, reports, messaging, and Postgres-backed shared data.">
+    <title>Beta 1.3 - Civic Connect</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <header class="nav">
-      <div class="brand">CIVIC CONNECT</div>
+      <div class="brand">Civic Connect</div>
       <nav class="nav-links" aria-label="Primary navigation">
         <a href="#features">Features</a>
         <a href="#cloud">Cloud Data</a>
         <a href="#download">Download</a>
-        <a class="button secondary" href="https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project" rel="noreferrer">Source</a>
+        <a class="button secondary" href="https://github.com/boluwatifeadewusi5/beta-1.0" rel="noreferrer">Source</a>
       </nav>
     </header>
 
     <main>
       <section class="hero">
         <div>
-          <p class="eyebrow">PYTHON TKINTER + SQLITE / POSTGRES</p>
+          <p class="eyebrow">PYTHON TKINTER + POSTGRES</p>
           <h1>Civic Connect</h1>
           <p class="hero-copy">
-            A desktop civic collaboration prototype for casual community users, NGOs, and Government agencies. It supports posts, messaging, partnerships, agreements, project tracking, reports, notifications, and optional hosted shared data.
+            A desktop civic collaboration app for casual community users, NGOs, and Government agencies. It supports posts, messaging, partnerships, agreements, project tracking, reports, notifications, and local or hosted Postgres data.
           </p>
           <div class="actions" id="download">
-            <a class="button primary" href="https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest/download/CivicConnect.exe">Download Windows EXE</a>
-            <a class="button secondary" href="https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest" rel="noreferrer">Latest Release</a>
+            <a class="button primary" href="test.txt" download>Download Civic Connect</a>
+            <a class="button secondary" href="https://github.com/boluwatifeadewusi5/beta-1.0/releases/latest" rel="noreferrer">Latest Release</a>
           </div>
         </div>
 
@@ -40,7 +40,7 @@
           </div>
           <div class="app-preview">
             <aside class="sidebar">
-              <div class="side-title">CIVIC CONNECT</div>
+              <div class="side-title">Civic Connect</div>
               <div class="side-item active">Dashboard</div>
               <div class="side-item">Partners</div>
               <div class="side-item">Messages</div>
@@ -74,8 +74,8 @@
 
       <section class="band alt" id="features">
         <div class="section-head">
-          <h2>Built For The Desktop Demo</h2>
-          <p>The app keeps a simple Python codebase while demonstrating real workflows across three role types.</p>
+          <h2>Built For Desktop Collaboration</h2>
+          <p>The app keeps a simple Python codebase while showing real workflows across three role types.</p>
         </div>
         <div class="grid">
           <article class="card">
@@ -93,31 +93,52 @@
         </div>
       </section>
 
+      <section class="band">
+        <div class="section-head">
+          <h2>Beta 1.3 Updates</h2>
+          <p>Focused fixes for background database loading, homepage stats, and heavier lag reduction.</p>
+        </div>
+        <div class="grid">
+          <article class="card">
+            <h3>Background Loading</h3>
+            <p>Heavy pages now load through a Tkinter-safe worker so clicking around does not block the main window.</p>
+          </article>
+          <article class="card">
+            <h3>Live Homepage Stats</h3>
+            <p>The homepage now shows counts for Public Users, NGOs, Government accounts, and Projects.</p>
+          </article>
+          <article class="card">
+            <h3>Smoother Actions</h3>
+            <p>Posts, likes, messages, project updates, agreement actions, and exports run without freezing the interface.</p>
+          </article>
+        </div>
+      </section>
+
       <section class="band" id="cloud">
         <div class="section-head">
-          <h2>Cloud-Ready Shared Data</h2>
-          <p>The executable can run offline with SQLite or connect to a hosted Postgres database with one environment variable.</p>
+          <h2>Postgres Data</h2>
+          <p>The executable can use a local Postgres server offline or connect to hosted Postgres online.</p>
         </div>
         <div class="steps">
           <div class="step">
             <div class="step-number">1</div>
             <div>
-              <h3>Create a hosted Postgres database</h3>
-              <p>Supabase or Neon are good free prototype options. Copy the pooled connection string.</p>
+              <h3>Choose local or hosted Postgres</h3>
+              <p>Use local Postgres for offline work, or Supabase/Neon when multiple installs should share data.</p>
             </div>
           </div>
           <div class="step">
             <div class="step-number">2</div>
             <div>
-              <h3>Set the database URL</h3>
-              <p>Set <code>CIVIC_CONNECT_DATABASE_URL</code> before running or packaging the app.</p>
+              <h3>Set the database URL when hosted</h3>
+              <p>Set <code>CIVIC_CONNECT_DATABASE_URL</code> for online mode, or use <code>CIVIC_CONNECT_LOCAL_DATABASE_URL</code> for a custom local server.</p>
             </div>
           </div>
           <div class="step">
             <div class="step-number">3</div>
             <div>
-              <h3>Build and publish the EXE</h3>
-              <p>Use PyInstaller locally, attach the EXE to a GitHub Release, then point the download button at that release asset URL.</p>
+              <h3>Refresh and publish</h3>
+              <p>Set <code>CIVIC_CONNECT_REFRESH_SECONDS</code> from 1 to 5, then build and attach the EXE to a GitHub Release.</p>
             </div>
           </div>
         </div>
@@ -125,28 +146,28 @@
 
       <section class="band alt">
         <div class="section-head">
-          <h2>Demo Login Details</h2>
-          <p>Fresh databases are seeded automatically the first time the app runs.</p>
+          <h2>Role-Based Workspaces</h2>
+          <p>Each role has a focused workspace so casual conversations, NGO operations, and Government approvals stay separate.</p>
         </div>
         <div class="grid">
           <article class="card">
-            <h3>Public User</h3>
-            <p>alex@demo.com<br>Password: password</p>
+            <h3>Community Space</h3>
+            <p>Public users handle posts, comments, friendships, private messages, profile updates, and activity exports.</p>
           </article>
           <article class="card">
-            <h3>NGO</h3>
-            <p>ngo@demo.com<br>Password: password</p>
+            <h3>NGO Workspace</h3>
+            <p>NGOs discover partners, submit agreements, manage projects, upload documents, and publish reports.</p>
           </article>
           <article class="card">
-            <h3>Government</h3>
-            <p>gov@demo.com<br>Password: password</p>
+            <h3>Government Review</h3>
+            <p>Government users approve partners, review agreement changes, monitor projects, and track public initiatives.</p>
           </article>
         </div>
       </section>
     </main>
 
     <footer class="footer">
-      <p>Civic Connect is a desktop prototype. The website hosts the showcase and download; the app itself runs on Windows.</p>
+      <p>Civic Connect is a desktop app. The website hosts the showcase and download; the app itself runs on Windows.</p>
     </footer>
   </body>
 </html>

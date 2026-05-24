@@ -22,7 +22,7 @@ See [VERCEL.md](../VERCEL.md) in the repo root.
 
 Primary button → latest release EXE:
 
-`https://github.com/boluwatifeadewusi5/Grp4-2026-COS102-Project/releases/latest/download/CivicConnect.exe`
+`https://github.com/boluwatifeadewusi5/beta-1.0/releases/latest/download/CivicConnect.exe`
 
 Build with `build_windows.bat` or the GitHub Actions workflow, then attach `CivicConnect.exe` to a release.
 

@@ -5,7 +5,8 @@ build/
 dist/
 *.spec
 *.log
+.env
+config.json
+civic_connect/config.json
+*.env
 *.sqlite3
-requirements-dev.txt
-requirements.txt
-.env.example

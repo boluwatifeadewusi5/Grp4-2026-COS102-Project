@@ -139,4 +139,4 @@ civic_connect/
 
 ## Notes
 
-This remains a local desktop prototype, not a web deployment. It is designed so your class can present both frontend flows and backend logic without Flask, Django, or external runtime dependencies.
+This remains a local desktop prototype, not a web deployment. It is designed so the group can present both frontend flows and backend logic without Flask, Django, or external runtime dependencies.
